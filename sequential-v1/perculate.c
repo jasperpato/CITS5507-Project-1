@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 #include "site.h"
 #include "queue.h"
@@ -8,7 +9,7 @@
 void perculate(Site* a, int n)
 {
   Queue* q = queue(n*n); // circular queue
-  int max_size = 0;
+  int max_size = 1;
 
   for(int r = 0; r < n; ++r) {
     for(int c = 0; c < n; ++c) {
@@ -78,18 +79,21 @@ void perculate(Site* a, int n)
 }
 
 int main(int argc, char *argv[])
-{  
-  int n = atoi(argv[1]);
-  float p = atof(argv[2]);
-  srand(time(NULL));
-
-  printf("Probability of occupation: %.2f\n\n", p);
-
-  // Site* a = site_array(n, p);
-  Site* a = file_site_array("lattice.txt", n);
-
+{
+  Site* a;
+  int n;
+  if(strcmp(argv[1], "-f") == 0) {
+    a = file_site_array(argv[2], &n);
+    printf("N: %d\n\n", n);
+  }
+  else {
+    n = atoi(argv[1]);
+    float p = atof(argv[2]);
+    printf("N: %d\nP: %.2f\n\n", n, p);
+    srand(time(NULL));
+    a = site_array(n, p);
+  }
   print_site_array(a, n);
-
   perculate(a, n);
 
   return 0;

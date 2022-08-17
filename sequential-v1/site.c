@@ -24,27 +24,34 @@ Site* site_array(int n, float p)
   return sites;
 }
 
-Site* file_site_array(char* filename, int n) {
-  Site* s = calloc(n*n, sizeof(Site));
+Site* file_site_array(char* filename, int* n) {
+  // scan first line to find n
   FILE* f = fopen(filename, "r");
-  int ch, i = 0, r = 0, c = 0;
-  if(f) {
-    while((ch = getc(f)) != EOF) {
-      if(ch == ' ') continue;
-      else if(ch == '\n' || c == n) {
-        c = 0;
-        ++r;
-        continue;
-      }
-      s[i].r = r;
-      s[i].c = c;
-      s[i].size = malloc(sizeof(int));
-      *(s[i].size) = 1;
+  if(!f) return NULL;
+  int ch;
+  while((ch = getc(f)) != '\n') {
+    if(ch != ' ') ++(*n);
+  }
+  fseek(f, 0, SEEK_SET);
 
-      if(ch == 'X') s[i].occupied = 1;
-      else s[i].occupied = 0;
-      ++c; ++i;
+  Site* s = calloc((*n)*(*n), sizeof(Site));
+  
+  int i = 0, r = 0, c = 0;
+  while((ch = getc(f)) != EOF) {
+    if(ch == ' ') continue;
+    else if(ch == '\n') {
+      c = 0;
+      ++r;
+      continue;
     }
+    s[i].r = r;
+    s[i].c = c;
+    s[i].size = malloc(sizeof(int));
+    *(s[i].size) = 1;
+
+    if(ch == 'X') s[i].occupied = 1;
+    else s[i].occupied = 0;
+    ++c; ++i;
   }
   fclose(f);
   return s;
