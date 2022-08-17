@@ -16,17 +16,8 @@ Site* site_array(int n, float p)
       sites[r*n+c].c = c;
       sites[r*n+c].size = malloc(sizeof(int));
       *(sites[r*n+c].size) = 1;
-
-      // only allocate memory for rows, cols if required
-
-      // sites[r*n+c].rows = calloc(n, sizeof(short));
-      // sites[r*n+c].cols = calloc(n, sizeof(short));
-      // sites[r*n+c].rows[r] = 1;
-      // sites[r*n+c].cols[c] = 1;
-
-      if((double)rand()/(double)RAND_MAX < p) {
-        sites[r*n+c].occupied = 1;
-      }
+      // don't allocate memory for rows, cols unless required
+      if((double)rand()/(double)RAND_MAX < p) sites[r*n+c].occupied = 1;
       else sites[r*n+c].occupied = 0; 
     }
   }
