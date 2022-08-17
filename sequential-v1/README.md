@@ -9,7 +9,7 @@ cc -o seq-v1 percolate.c site.c bond.c queue.c
 ```
 
 Site file contents example:
-X X O X
-O X O O
-X X X O
+X X O X  
+O X O O  
+X X X O  
 X X X O
