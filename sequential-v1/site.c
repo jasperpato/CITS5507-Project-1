@@ -35,7 +35,7 @@ Site* file_site_array(char* filename, int* n) {
   fseek(f, 0, SEEK_SET);
 
   Site* s = calloc((*n)*(*n), sizeof(Site));
-  
+
   int i = 0, r = 0, c = 0;
   while((ch = getc(f)) != EOF) {
     if(ch == ' ') continue;
@@ -72,13 +72,15 @@ void print_site_array(Site* a, int n)
   int s = (int)log10(n) + 1;
   printf(" ");
   for(int i = 0; i < s; ++i) printf(" ");
-  for(int c = 0; c < n; ++c) printf(" %*d", s, c);
+  for(int c = 0; c < n; ++c) printf("\033[0;34m %*d\033[0;30m", s, c);
   printf("\n\n");
   for(int r = 0; r < n; ++r) {
-    printf("%*d ", s, r);
+    printf("\033[0;34m%*d \033[0;30m", s, r);
     for(int c = 0; c < n; ++c) {
       for(int i = 0; i < s; ++i) printf(" ");
-      if(a[r*n+c].occupied) printf("X");
+      if(a[r*n+c].occupied) {
+        printf("\033[0;31mX\033[0;30m");
+      }
       else printf("O");
     }
     printf("\n");

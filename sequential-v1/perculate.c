@@ -93,8 +93,9 @@ int main(int argc, char *argv[])
     srand(time(NULL));
     a = site_array(n, p);
   }
-  print_site_array(a, n);
-  perculate(a, n);
-
+  if(n) {
+    print_site_array(a, n);
+    perculate(a, n);
+  }
   return 0;
 }
