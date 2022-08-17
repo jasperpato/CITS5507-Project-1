@@ -14,5 +14,5 @@ void free_queue(Queue*);
 short is_empty(Queue*);
 void enqueue(Queue*, Site*);
 Site* dequeue(Queue*);
-
+ 
 #endif

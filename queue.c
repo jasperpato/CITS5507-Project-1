@@ -2,7 +2,7 @@
 
 /*
  * Circular queue implemented as an array of sites
- * Assumes queue will not overflow
+ * Assumes queue will not overflow 
  */
 
 Queue* queue(int n) {
