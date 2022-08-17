@@ -14,6 +14,8 @@ Site* site_array(int n, float p)
     for(int c = 0; c < n; ++c) {
       sites[r*n+c].r = r;
       sites[r*n+c].c = c;
+      sites[r*n+c].size = malloc(sizeof(int));
+      *(sites[r*n+c].size) = 1;
 
       // only allocate memory for rows, cols if required
 
@@ -22,7 +24,9 @@ Site* site_array(int n, float p)
       // sites[r*n+c].rows[r] = 1;
       // sites[r*n+c].cols[c] = 1;
 
-      if((double)rand()/(double)RAND_MAX < p) sites[r*n+c].occupied = 1;
+      if((double)rand()/(double)RAND_MAX < p) {
+        sites[r*n+c].occupied = 1;
+      }
       else sites[r*n+c].occupied = 0; 
     }
   }
@@ -43,6 +47,9 @@ Site* file_site_array(char* filename, int n) {
       }
       s[i].r = r;
       s[i].c = c;
+      s[i].size = malloc(sizeof(int));
+      *(s[i].size) = 1;
+
       if(ch == 'X') s[i].occupied = 1;
       else s[i].occupied = 0;
       ++c; ++i;

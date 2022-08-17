@@ -29,31 +29,43 @@ void perculate(Site* a, int n)
       }
       while(!is_empty(q)) {
         Site* s = dequeue(q); // Next site in the current cluster
-        // printf("Dequeued cluster site (%d, %d).\n", s->r, s->c);
+        // printf("\nDequeued cluster site (%d, %d).\n", s->r, s->c);
 
         // indices of neighbours
-        int is[] = { s->r*n+(s->c-1)%n, s->r*n+(s->c+1)%n, ((s->r-1)%n)*n+c, ((s->r+1)%n)*n+c };
+        int is[] = {
+          s->r*n+(s->c+n-1)%n, // left
+          s->r*n+(s->c+n+1)%n, // right
+          ((s->r+n-1)%n)*n+s->c, // top
+          ((s->r+n+1)%n)*n+s->c // bottom
+        };
 
         // update stats based on neighbours
         for(int i = 0; i < 4; ++i) {
-          Site* n = &a[is[i]]; // Neighbouring site
-          if(!n->marked && n->occupied) {
-            
-            // printf("Occupied neighbour (%d, %d)\n", n->r, n->c);
-            
-            // update s
-            s->size += 1;
-            if(s->size > max_size) max_size = s->size;
-            s->rows[n->r] = 1;
-            s->cols[n->c] = 1;
+          Site* nb = &a[is[i]]; // Neighbouring site
+          if(!nb->marked && nb->occupied) {
 
-            // update n
-            n->marked = 1;
-            n->size = s->size;
-            n->rows = s->rows;
-            n->cols = s->cols;
+            // printf("Updating neighbour (%d, %d)\n", nb->r, nb->c);
 
-            enqueue(q, n);
+            // update s and n
+            nb->marked = 1;
+            
+            *(s->size) += 1;
+            nb->size = s->size;
+            if(*(nb->size) > max_size) max_size = *(nb->size);
+
+            nb->rows = s->rows;
+            nb->cols = s->cols;
+            nb->rows[nb->r] = 1;
+            nb->cols[nb->c] = 1;
+
+            // printf("Size: %d\n", *(nb->size));
+            // printf("Rows:");
+            for(int i = 0; i < n; ++i) // printf(" %d", nb->rows[i]);
+            // printf("\nCols:");
+            for(int i = 0; i < n; ++i) // printf(" %d", nb->cols[i]);
+            // printf("\n");
+
+            enqueue(q, nb);
           }
         }
       }
@@ -67,19 +79,16 @@ void perculate(Site* a, int n)
   for(int r = 0; r < n; ++r) {
     for(int c = 0; c < n; ++c) {
         Site* s = &a[r*n+c];
-          if(s->occupied) { // otherwise rows and cols memory will not be allocated
+        if(s->occupied) { // otherwise rows and cols memory will not be allocated
           int rs = 0, cs = 0;
-          // printf("Checking collected rows for site (%d, %d).\n", r, c);
           for(int i = 0; i < n; ++i) {
-            // printf("%d ", s->rows[i]);
             rs += s->rows[i];
           }
-          // printf("\nChecking collected cols for site (%d, %d).\n", r, c);
           for(int i = 0; i < n; ++i) {
-            // printf("%d ", s->cols[i]);
             cs += s->cols[i];
           }
-          if(rs == n-1 || cs == n-1) perc = 1;
+          // printf("Site (%d, %d) row sum: %d, col sum %d.\n", r, c, rs, cs);
+          if(rs == n || cs == n) perc = 1;
         }
     }
   }
