@@ -7,7 +7,7 @@
 
 Queue* queue(int n) {
   Site** queue = malloc(n*sizeof(Site*));
-  Queue* q = malloc(sizeof(Queue));
+  Queue* q = calloc(1, sizeof(Queue));
   q->queue=queue;
   q->size=n;
   q->front=0;

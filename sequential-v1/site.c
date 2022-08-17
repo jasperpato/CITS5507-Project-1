@@ -2,12 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 
-/**
- * @param n size of square lattice
- * @param p probability of site occupancy
- * @return short* pointer to site array
- */
-Site* site_array(int n, float p)
+Site* site_array(int n, float p, short rnd)
 {
   Site* sites = calloc(n*n, sizeof(Site));
   for(int r = 0; r < n; ++r) {
@@ -17,8 +12,10 @@ Site* site_array(int n, float p)
       sites[r*n+c].size = malloc(sizeof(int));
       *(sites[r*n+c].size) = 1;
       // don't allocate memory for rows, cols unless required
-      if((double)rand()/(double)RAND_MAX < p) sites[r*n+c].occupied = 1;
-      else sites[r*n+c].occupied = 0; 
+      if(rnd) {
+        if((double)rand()/(double)RAND_MAX < p) sites[r*n+c].occupied = 1;
+        else sites[r*n+c].occupied = 0; 
+      }
     }
   }
   return sites;
@@ -70,7 +67,8 @@ void free_site_array(Site* s, int n) {
 
 void print_site_array(Site* a, int n)
 {
-  int s = (int)log10(n) + 1;
+  if(n > 40) return;
+  int s = (int)log10(n-1) + 1;
   printf(" ");
   for(int i = 0; i < s; ++i) printf(" ");
   for(int c = 0; c < n; ++c) printf("\033[0;34m %*d\033[0;30m", s, c);
@@ -86,5 +84,4 @@ void print_site_array(Site* a, int n)
     }
     printf("\n");
   }
-  printf("\n");
 }
