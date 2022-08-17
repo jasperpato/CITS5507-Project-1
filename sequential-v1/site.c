@@ -29,6 +29,7 @@ Site* file_site_array(char* filename, int* n) {
   FILE* f = fopen(filename, "r");
   if(!f) return NULL;
   int ch;
+  *n = 0;
   while((ch = getc(f)) != '\n') {
     if(ch != ' ') ++(*n);
   }
