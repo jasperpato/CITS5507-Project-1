@@ -1,4 +1,4 @@
 .vscode
-*/.DS_Store
-*/obj
-*/percolate
+**/.DS_Store
+**/obj
+**/percolate
