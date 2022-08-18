@@ -1,13 +1,5 @@
 # Sequential v1
 
-To run:
-
-```console
-cd sequential-v1
-cc -o percolate percolate.c site.c bond.c queue.c
-./percolate [-b | -s] [[-f FILENAME] | [LATTICE_SIZE PROBABILITY]]
-```
-
 Site file example:
 
 ```
