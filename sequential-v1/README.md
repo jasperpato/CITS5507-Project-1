@@ -4,8 +4,8 @@ To run:
 
 ```console
 cd sequential-v1
-cc -o seq-v1 percolate.c site.c bond.c queue.c
-./seq-v1 [-b | -s] [[-f FILENAME] | [LATTICE_SIZE PROBABILITY]]
+cc -o percolate percolate.c site.c bond.c queue.c
+./percolate [-b | -s] [[-f FILENAME] | [LATTICE_SIZE PROBABILITY]]
 ```
 
 Site file example:

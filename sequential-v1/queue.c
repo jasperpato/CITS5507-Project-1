@@ -1,10 +1,8 @@
 #include "queue.h"
 
-/*
- * Circular queue implemented as an array of sites
- * Assumes queue will not overflow 
+/**
+ * @return Queue* pointer to a circular queue array of size n of site pointers
  */
-
 Queue* queue(int n)
 {
   Site** queue = malloc(n*sizeof(Site*));
@@ -29,6 +27,9 @@ short is_empty(Queue* q)
   return 0;
 }
 
+/**
+ * @brief enqueue the site pointer s to queue q. Does not check for overflow
+ */
 void enqueue(Queue* q, Site* s)
 {
   q->queue[q->back] = s;
@@ -36,6 +37,9 @@ void enqueue(Queue* q, Site* s)
   if(q->front == q->back) q->full = 1;
 }
 
+/**
+ * @brief return pointer to site at the front of the queue q and remove pointer from queue
+ */
 Site* dequeue(Queue* q)
 {
   Site* s = q->queue[q->front];

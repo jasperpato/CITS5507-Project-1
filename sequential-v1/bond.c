@@ -1,5 +1,12 @@
 #include "bond.h"
 
+/**
+ * @param n size of lattice
+ * @param p probability of a bond
+ * @return Bond* pointer to a bond struct that contains vertical and horizontal bond information
+ * 
+ * NOTE: this could be parallelised
+ */
 Bond* bond(int n, float p)
 {
   Bond* b = malloc(sizeof(Bond));
@@ -16,6 +23,11 @@ Bond* bond(int n, float p)
   return b;
 }
 
+/**
+ * @param filename 
+ * @param n pointer to lattice size variable to write
+ * @return pointer to a bond struct scanned from a file
+ */
 Bond* file_bond(char* filename, int* n)
 {
   // scan second line to find n
@@ -34,35 +46,34 @@ Bond* file_bond(char* filename, int* n)
   b->v = calloc((*n)*(*n), sizeof(short));
   b->h = calloc((*n)*(*n), sizeof(short));
 
-  int r  = 0, c = 0, v_count = 0, h_count = 0;
+  int r  = 0, c = 0, v_count = 0;
   short gap = 1, vert = 1;
   while((ch = getc(f)) != EOF) {
-    if(v_count == *n) break;
+    if(v_count == *n) break; // can have text underneath
     if(vert) {
-      if(ch != '\n' && h_count == *n) continue; // skip characters at end of line
+      if(ch != '\n' && c == *n) continue; // skip characters at end of line
       if(ch == ' ') {
         if(gap) gap = 0;
         else {
           gap = 1;
-          ++c; ++h_count;
+          ++c;
         }
         continue;
       } else if(ch == '\n') {
-        vert = 0; c = 0; gap = 0; h_count = 0;
+        vert = 0; c = 0; gap = 0;
       } else if(ch == '|') {
         b->v[r*(*n)+c] = 1;
         gap = 1;
-        ++c; ++h_count;
+        ++c;
       }
     } else { // in a horizontal line
-      if(ch != '\n' && h_count == *n) continue; // skip characters at end of line
+      if(ch != '\n' && c == *n) continue; // skip characters at end of line
       if(ch == '\n') {
         vert = 1; gap = 1;
-        h_count = 0; c = 0;
+        c = 0;
         ++r; ++v_count;
       } else if(ch == 'O') {
         gap = 0;
-        ++h_count;
       } else {
         b->h[r*(*n)+c] = (ch == '-') ? 1 : 0;
         ++c;

@@ -2,7 +2,14 @@
 #include <stdio.h>
 #include <math.h>
 
-Site* site_array(int n, float p, short rnd)
+/**
+ * @param n size of 2D site array
+ * @param p probability of occupation. Negative p will skip the occupation selection step
+ * @return Site* pointer to site array
+ * 
+ * NOTE: this could be parallelised
+ */
+Site* site_array(int n, float p)
 {
   Site* sites = calloc(n*n, sizeof(Site));
   for(int r = 0; r < n; ++r) {
@@ -11,8 +18,8 @@ Site* site_array(int n, float p, short rnd)
       sites[r*n+c].c = c;
       sites[r*n+c].size = malloc(sizeof(int));
       *(sites[r*n+c].size) = 1;
-      // don't allocate memory for rows, cols unless required
-      if(rnd) {
+      // NOTE: not allocating memory for rows, cols until required
+      if(p > 0) {
         if((double)rand()/(double)RAND_MAX < p) sites[r*n+c].occupied = 1;
         else sites[r*n+c].occupied = 0; 
       }
@@ -21,6 +28,11 @@ Site* site_array(int n, float p, short rnd)
   return sites;
 }
 
+/**
+ * @param filename 
+ * @param n pointer to lattice size variable to write
+ * @return Site* site array scanned from file
+ */
 Site* file_site_array(char* filename, int* n) {
   // scan first line to find n
   FILE* f = fopen(filename, "r");
@@ -28,28 +40,29 @@ Site* file_site_array(char* filename, int* n) {
   int ch;
   *n = 0;
   while((ch = getc(f)) != '\n') {
-    if(ch != ' ') ++(*n);
+    if(ch == 'X' || ch == 'O') ++(*n);
   }
   fseek(f, 0, SEEK_SET);
 
   Site* s = calloc((*n)*(*n), sizeof(Site));
 
-  int i = 0, r = 0, c = 0;
+  int r = 0, c = 0;
   while((ch = getc(f)) != EOF) {
-    if(ch == ' ') continue;
+    if(ch == ' ' || (c == *n && ch != '\n')) continue;
     else if(ch == '\n') {
       c = 0;
       ++r;
+      if(r == *n) break; // can have text underneath
       continue;
     }
-    s[i].r = r;
-    s[i].c = c;
-    s[i].size = malloc(sizeof(int));
-    *(s[i].size) = 1;
+    s[r*(*n)+c].r = r;
+    s[r*(*n)+c].c = c;
+    s[r*(*n)+c].size = malloc(sizeof(int));
+    *(s[r*(*n)+c].size) = 1;
 
-    if(ch == 'X') s[i].occupied = 1;
-    else s[i].occupied = 0;
-    ++c; ++i;
+    if(ch == 'X') s[r*(*n)+c].occupied = 1;
+    else s[r*(*n)+c].occupied = 0;
+    ++c;
   }
   fclose(f);
   return s;
