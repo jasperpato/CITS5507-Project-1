@@ -1,5 +1,13 @@
 # Sequential v1 - DO NOT CHANGE
 
+To run:
+
+```console
+cd sequential-v1/src
+make
+./percolate [-s | -b] [[-f FILENAME] | [LATTICE_SIZE PROBABILITY]]
+```
+
 Site file example:
 
 ```
