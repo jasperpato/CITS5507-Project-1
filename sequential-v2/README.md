@@ -1,4 +1,4 @@
-# Sequential v1
+# Sequential v2
 
 To run:
 
@@ -8,21 +8,21 @@ cc -o percolate percolate.c site.c bond.c queue.c
 ./percolate [-b | -s] [[-f FILENAME] | [LATTICE_SIZE PROBABILITY]]
 ```
 
-Site file example:
+Site file examples:
 
 ```
-X X O X
-O X O O
+X X O X   XOX
+O X O O   OOX
+X X X O   XXO
 X X X O
-X X X O
 ```
 
-Bond file example:
+Bond file examples:
 
 ```
- | |
--O-O O
- | |
+ | |        |
+-O-O O   -O-O
+ | |      O O
  O O-O
  |
 -O O-O
