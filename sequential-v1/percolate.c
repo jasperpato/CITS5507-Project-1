@@ -7,7 +7,8 @@
 #include "bond.h"
 #include "queue.h"
 
-short has_neighbours(Site* a, int n, Site* s, Bond* b) {
+short has_neighbours(Site* a, int n, Site* s, Bond* b)
+{
   // indices of bonds
   int ib[] = {
     s->r*n+s->c, // left
@@ -23,10 +24,11 @@ short has_neighbours(Site* a, int n, Site* s, Bond* b) {
 
 /**
  * @return Site pointer array of length 4 containing addresses of unmarked, connected neighbours
- *         Ordered left, right, top, bottom
- *         Each position contains site pointer if unmarked, connected neighbour else NULL
+ * Ordered left, right, top, bottom
+ * Each position contains site pointer if unmarked, connected neighbour else NULL
  */
-Site** get_neighbours(Site* a, int n, Site* s, Bond* b) {
+Site** get_neighbours(Site* a, int n, Site* s, Bond* b)
+{
   // indices of neighbours
   int is[] = {
     s->r*n+(s->c+n-1)%n, // left
@@ -47,8 +49,7 @@ Site** get_neighbours(Site* a, int n, Site* s, Bond* b) {
     if(!nb->marked && ((!b && nb->occupied) || (b && ((i<2 && b->h[ib[i]]) || (i>=2 && b->v[ib[i]]))))) {
       nb->marked = 1; // must mark site here for n=2 case
       nbs[i] = nb;
-    }
-    else nbs[i] = NULL;
+    } else nbs[i] = NULL;
   }
   return nbs;
 }
@@ -57,7 +58,6 @@ void percolate(Site* a, int n, Bond* b)
 {
   Queue* q = queue(n*n); // circular queue
   int max_size = 0;
-
   for(int r = 0; r < n; ++r) {
     for(int c = 0; c < n; ++c) {
       Site* p = &a[r*n+c]; // Site that begins a new cluster
@@ -128,12 +128,13 @@ int main(int argc, char *argv[])
     if(!b) {
       a = file_site_array(argv[3], &n);
       printf("N: %d\n\n", n);
+    } else {
+      // a = site_array(n, 0, 0);
+      Bond* b = file_bond(argv[3], &n);
+      print_bond(b, n);
+      // percolate(a, n, b);
     }
-    else {
-      // file_bond_array
-    }
-  }
-  else {
+  } else {
     n = atoi(argv[2]);
     float p = atof(argv[3]);
     printf("N: %d\nP: %.2f\n\n", n, p);
@@ -142,9 +143,8 @@ int main(int argc, char *argv[])
       a = site_array(n, p, 1);
       print_site_array(a, n);
       percolate(a, n, NULL);
-    }
-    else {
-      a = site_array(n, p, 0);
+    } else {
+      a = site_array(n, 0, 0);
       Bond* b = bond(n, p);
       print_bond(b, n);
       percolate(a, n, b);

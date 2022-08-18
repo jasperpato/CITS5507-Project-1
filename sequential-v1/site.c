@@ -55,7 +55,8 @@ Site* file_site_array(char* filename, int* n) {
   return s;
 }
 
-void free_site_array(Site* s, int n) {
+void free_site_array(Site* s, int n)
+{
   for(int r = 0; r < n; ++r) {
     for(int c = 0; c < n; ++c) {
       free(s[r*n+c].rows);
@@ -77,9 +78,7 @@ void print_site_array(Site* a, int n)
     printf("\033[0;34m%*d \033[0;30m", s, r);
     for(int c = 0; c < n; ++c) {
       for(int i = 0; i < s; ++i) printf(" ");
-      if(a[r*n+c].occupied) {
-        printf("\033[0;31mX\033[0;30m");
-      }
+      if(a[r*n+c].occupied) printf("\033[0;31mX\033[0;30m");
       else printf("O");
     }
     printf("\n");

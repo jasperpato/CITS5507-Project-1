@@ -5,7 +5,8 @@
  * Assumes queue will not overflow 
  */
 
-Queue* queue(int n) {
+Queue* queue(int n)
+{
   Site** queue = malloc(n*sizeof(Site*));
   Queue* q = calloc(1, sizeof(Queue));
   q->queue=queue;
@@ -16,7 +17,8 @@ Queue* queue(int n) {
   return q;
 }
 
-void free_queue(Queue* q) {
+void free_queue(Queue* q)
+{
   free(q->queue);
   free(q);
 }
