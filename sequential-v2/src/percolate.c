@@ -60,6 +60,7 @@ Site** get_neighbours(Site* a, int n, Site* s, Bond* b)
   Site** nbs = malloc(4*sizeof(Site*));
   for(int i = 0; i < 4; ++i) {
     Site* nb = &a[is[i]];
+    // either check site occupation or bond struct
     if(!nb->marked && ((!b && nb->occupied) || (b && ((i<2 && b->h[ib[i]]) || (i>=2 && b->v[ib[i]]))))) {
       nb->marked = 1; // must mark site here for n=2 case when top neighbour == bottom neighbour
       nbs[i] = nb;
@@ -69,7 +70,7 @@ Site** get_neighbours(Site* a, int n, Site* s, Bond* b)
 }
 
 /**
- * @brief Simulate percolation using BFS approach. Outputs max cluster size and percolation boolean.
+ * @brief Simulate percolation using BFS. Outputs max cluster size and percolation boolean.
  * @param a site array
  * @param n size of site array
  * @param b bond struct, either valid address if [-b] or NUll if [-s]
@@ -85,7 +86,7 @@ void percolate(Site* a, int n, Bond* b)
         p->marked = 1;
         max_size = max_size ? max_size : 1;
 
-        // allocate memory for rows, cols of this new cluster
+        // allocate memory for rows, cols of this new cluster (every site in cluster shares these)
         p->rows = calloc(n, sizeof(short));
         p->cols = calloc(n, sizeof(short));
         p->rows[r] = 1;
@@ -94,7 +95,7 @@ void percolate(Site* a, int n, Bond* b)
         enqueue(q, p);
       }
       while(!is_empty(q)) {
-        Site* s = dequeue(q); // Next site in the current cluster
+        Site* s = dequeue(q); // next site in the current cluster
         Site** nbs = get_neighbours(a, n, s, b);
         for(int i = 0; i < 4; ++i) {
           if(nbs[i]) { // loop through connected, unmarked neighbours

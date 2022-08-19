@@ -1,6 +1,6 @@
-# Sequential v1 - DO NOT CHANGE
+# Sequential v1 - DO NOT ALTER
 
-To run:
+###To run:
 
 ```console
 cd sequential-v1/src
@@ -8,7 +8,7 @@ make
 ./percolate [-s | -b] [[-f FILENAME] | [LATTICE_SIZE PROBABILITY]]
 ```
 
-Site file example:
+###Site file example:
 
 ```
 X X O X
@@ -17,7 +17,7 @@ X X X O
 X X X O
 ```
 
-Bond file example:
+###Bond file example:
 
 ```
  | |
