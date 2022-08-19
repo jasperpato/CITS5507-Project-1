@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "site.h"
 #include "bond.h"
@@ -128,73 +129,82 @@ void percolate(Site* a, int n, Bond* b)
           for(int i = 0; i < n; ++i) cs += s->cols[i];
           if(rs == n || cs == n) perc = 1;
         }
-        // else: otherwise rows and cols memory has not be allocated
+        // else: rows and cols memory will not have been allocated
     }
   }
   free_site_array(a, n);
   if(b) free_bond(b);
 
-  printf("Percolates: %s\n", perc ? "True" : "False");
-  printf("Max cluster size: %d\n", max_size);
+  printf("Perc: %s\n", perc ? "True" : "False");
+  printf(" Max: %d\n", max_size);
 }
 
 /**
- * USAGE: ./percolate [-b | -s] [[-f FILENAME] | [LATTICE_SIZE PROBABILITY]]
+ * USAGE: ./percolate [-b | -s] [-t] [[-f FILENAME] | [LATTICE_SIZE PROBABILITY]]
  */
 int main(int argc, char *argv[])
 {
+  clock_t start = clock();
+
   Site* a = NULL;
   Bond* b = NULL;
   int n = 0;
   float p = -1.0;
-  short bd = 0;
+  short site = 1, t = 0;
+  char* fname = NULL;
 
-  if(argc < 4) {
-    printf("Invalid arguments.\n");
-    return 0;
+  int c;
+  while ((c = getopt (argc, argv, "sbtf:")) != -1) {
+    if(c == 'b') site = 0;
+    else if(c == 't') t = 1;
+    else if(c == 'f') {
+      if(!optarg) return 0;
+      fname = optarg;
+    }
   }
-  if(strcmp(argv[1], "-b") == 0) bd = 1; // site or bond
-  else if(strcmp(argv[1], "-s") != 0) {
-    printf("Invalid arguments.\n");
-    return 0;
-  }
-  if(strcmp(argv[2], "-f") == 0) {
-    if(bd) {
-      b = file_bond(argv[3], &n);
+  if(fname) {
+    if(site) {
+      a = file_site_array(fname, &n);
+      if(!a) {
+        printf("Error reading file.\n");
+        return 0;
+      }
+      print_site_array(a, n);
+    } else {
+      b = file_bond(fname, &n);
       if(!b) {
         printf("Error reading file.\n");
         return 0;
       }
       a = site_array(n, -1.0);
       print_bond(b, n);
-    } else {
-      a = file_site_array(argv[3], &n);
-      if(!a) {
-        printf("Error reading file.\n");
-        return 0;
-      }
-      print_site_array(a, n);
     }
-  } else {
-    n = atoi(argv[2]);
-    p = atof(argv[3]);
+  }
+  else {
+    if(argc - optind < 2) {
+      printf("Invalid arguments.\n");
+      return 0;
+    }
+    n = atoi(argv[optind++]);
+    p = atof(argv[optind]);
     if(n < 2 || p < 0) {
       printf("Invalid arguments.\n");
       return 0;
     }
     srand(time(NULL));
-    if(bd) {
+    if(site) {
+      a = site_array(n, p);
+      print_site_array(a, n);
+    } else {
       b = bond(n, p);
       a = site_array(n, -1.0);
       print_bond(b, n);
-    } else {
-      a = site_array(n, p);
-      print_site_array(a, n);
     }
   }
   printf("\nN: %d\n", n);
   if(p != -1.0) printf("P: %.2f\n", p);
   printf("\n");
   percolate(a, n, b);
+  printf("Time: %.4f\n", (double)(clock()-start)/CLOCKS_PER_SEC);
   return 0;
 }
