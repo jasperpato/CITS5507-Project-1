@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "site.h"
+
+#include "./site.h"
 
 typedef struct {
   short *v, *h;

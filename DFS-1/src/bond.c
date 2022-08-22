@@ -1,4 +1,4 @@
-#include "bond.h"
+#include "../include/bond.h"
 
 /**
  * @param n size of lattice
@@ -10,8 +10,10 @@
 Bond* bond(int n, float p)
 {
   Bond* b = calloc(1, sizeof(Bond));
+  if(!b) return NULL;
   b->v = calloc(n*n, sizeof(short));
   b->h = calloc(n*n, sizeof(short));
+  if(!b->v || !b->h) return NULL;
   for(int r = 0; r < n; ++r) {
     for(int c = 0; c < n; ++c) {
       if((double)rand()/(double)RAND_MAX < p) b->v[r*n+c] = 1;
@@ -43,8 +45,10 @@ Bond* file_bond(char* filename, int* n)
   fseek(f, 0, SEEK_SET);
 
   Bond* b = calloc(1, sizeof(Bond));
+  if(!b) return NULL;
   b->v = calloc((*n)*(*n), sizeof(short));
   b->h = calloc((*n)*(*n), sizeof(short));
+  if(!b->v || !b->h) return NULL;
 
   int r  = 0, c = 0, v_count = 0;
   short gap = 1, vert = 1;

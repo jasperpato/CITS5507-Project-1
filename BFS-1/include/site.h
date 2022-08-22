@@ -2,6 +2,9 @@
 #define SITE_H
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <time.h>
 
 typedef struct {
   int r, c, *size;

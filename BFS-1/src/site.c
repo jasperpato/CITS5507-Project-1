@@ -1,7 +1,4 @@
-#include "site.h"
-#include <stdio.h>
-#include <math.h>
-#include <time.h>
+#include "../include/site.h"
 
 /**
  * @param n size of 2D site array
@@ -14,11 +11,13 @@ Site* site_array(int n, float p)
 {
   clock_t start = clock();
   Site* sites = calloc(n*n, sizeof(Site));
+  if(!sites) return NULL;
   for(int r = 0; r < n; ++r) {
     for(int c = 0; c < n; ++c) {
       sites[r*n+c].r = r;
       sites[r*n+c].c = c;
-      sites[r*n+c].size = malloc(sizeof(int));
+      sites[r*n+c].size = calloc(1, sizeof(int));
+      if(!sites[r*n+c].size) return NULL;
       *(sites[r*n+c].size) = 1;
       // NOTE: not allocating memory for rows, cols until required
       if(p > 0) {
@@ -47,6 +46,7 @@ Site* file_site_array(char* filename, int* n) {
   fseek(f, 0, SEEK_SET);
 
   Site* s = calloc((*n)*(*n), sizeof(Site));
+  if(!s) return NULL;
 
   int r = 0, c = 0;
   while((ch = getc(f)) != EOF) {
@@ -59,7 +59,8 @@ Site* file_site_array(char* filename, int* n) {
     }
     s[r*(*n)+c].r = r;
     s[r*(*n)+c].c = c;
-    s[r*(*n)+c].size = malloc(sizeof(int));
+    s[r*(*n)+c].size = calloc(1, sizeof(int));
+    if(!s[r*(*n)+c].size) return NULL;
     *(s[r*(*n)+c].size) = 1;
 
     if(ch == 'X') s[r*(*n)+c].occupied = 1;

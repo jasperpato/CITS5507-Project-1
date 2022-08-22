@@ -1,7 +1,7 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-#include "site.h"
+#include "./site.h"
 
 typedef struct {
   Site** queue;

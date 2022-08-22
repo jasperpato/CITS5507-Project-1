@@ -1,12 +1,14 @@
-#include "queue.h"
+#include "../include/queue.h"
 
 /**
  * @return Queue* pointer to a circular queue array of size n of site pointers
  */
 Queue* queue(int n)
 {
-  Site** queue = malloc(n*sizeof(Site*));
+  Site** queue = calloc(n, sizeof(Site*));
+  if(!queue) return NULL;
   Queue* q = calloc(1, sizeof(Queue));
+  if(!q) return NULL;
   q->queue=queue;
   q->size=n;
   q->front=0;

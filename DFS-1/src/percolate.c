@@ -4,9 +4,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "site.h"
-#include "bond.h"
-#include "cluster.h"
+#include "../include/site.h"
+#include "../include/bond.h"
+#include "../include/cluster.h"
 
 /**
  * @brief Check if a site has at least one bond to a neighbour (and can therefore be the start of a cluster)
@@ -65,6 +65,7 @@ Site** get_neighbours(Site* a, Bond* b, int n, Site* s)
     ((s->r+n+1)%n)*n+s->c // bottom
   };
   Site** nbs = calloc(4, sizeof(Site*));
+  if(!nbs) return NULL;
   for(int i = 0; i < 4; ++i) {
     Site* nb = &a[is[i]];
     // either check site occupation or bond struct
@@ -76,8 +77,12 @@ Site** get_neighbours(Site* a, Bond* b, int n, Site* s)
   return nbs;
 }
 
-void DFS(Site* a, Bond* b, int n, Site* s) {
+void DFS(Site* a, Bond* b, int n, Site* s, short* err) {
   Site** nbs = get_neighbours(a, b, n, s);
+  if(!nbs) {
+    *err = 1;
+    return;
+  }
   Cluster* cl = s->cluster;
   for(int i = 0; i < 4; ++i) { // loop through connected, unseen neighbours
     if(!nbs[i]) continue; 
@@ -88,7 +93,7 @@ void DFS(Site* a, Bond* b, int n, Site* s) {
     if(!cl->cols[nb->c]) cl->width++;
     cl->rows[nb->r] = 1;
     cl->cols[nb->c] = 1;
-    DFS(a, b, n, nb);
+    DFS(a, b, n, nb, err);
   }
 }
 
@@ -100,11 +105,20 @@ void DFS(Site* a, Bond* b, int n, Site* s) {
  */
 void percolate(Site* a, Bond* b, int n)
 {
+  short err = 0;
   for(int i = 0; i < n*n; ++i) {
     if(!a[i].seen && (a[i].occupied || (b && has_neighbours(a, b, n, &a[i])))) {
       a[i].seen = 1;
       a[i].cluster = cluster(i/n, i%n, n);
-      DFS(a, b, n, &a[i]);
+      if(!a[i].cluster) {
+        printf("Memory error.\n");
+        return;
+      }
+      DFS(a, b, n, &a[i], &err);
+      if(err) {
+        printf("Memory error.\n");
+        return;
+      }
     }   
   }
   short perc = 0;
