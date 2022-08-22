@@ -42,7 +42,7 @@ short has_neighbours(Site* a, Bond* b, int n, Site* s, short t)
 }
 
 /**
- * @return bottom neighbour if connected and separate cluster NULL
+ * @return bottom neighbour if connected and separate cluster, else NULL
  */
 Site* bottom_neighbour(Site* a, Bond* b, int n, Site* s)
 {
@@ -50,7 +50,8 @@ Site* bottom_neighbour(Site* a, Bond* b, int n, Site* s)
   int ib = ((s->r+n+1)%n)*n+s->c;
   Site *nb = &a[is];
   if((!b && !nb->occupied) || (b && !b->v[ib])) return NULL;
-  if(nb->cluster && s->cluster->id == nb->cluster->id) return NULL;
+  if(!nb->cluster || !s->cluster) return NULL;
+  if(s->cluster->id == nb->cluster->id) return NULL;
   return nb;
 }
 
@@ -113,6 +114,13 @@ void DFS(Site* a, Bond* b, int n, Site* s, short t, short* err) {
   }
 }
 
+short on_border(int i, int n) {
+  if(i >= 0 && i < n) return 1; // top row
+  if(i >= n*(n/2-1) && i < n*(n/2+1)) return 1; // middle two rows
+  if(i >= n*(n-1) && i < n*n) return 1; // bottom row
+  return 0;
+}
+
 /**
  * @brief Simulate percolation using DFS. Outputs max cluster size and percolation boolean.
  * @param a site array
@@ -123,7 +131,7 @@ void percolate(Site* a, Bond* b, int n, short t)
 {
   short err = 0;
   for(int i = t*n*(n/2); i < (t+1)*n*(n/2); ++i) {
-    if(!a[i].seen && (a[i].occupied || (b && has_neighbours(a, b, n, &a[i], t)))) {
+    if(!a[i].seen && ((!b && a[i].occupied) || (b && (has_neighbours(a, b, n, &a[i], t) || on_border(i, n))))) {
       a[i].seen = 1;
       a[i].cluster = cluster(i/n, i%n, n);
       if(!a[i].cluster) {
@@ -139,13 +147,35 @@ void percolate(Site* a, Bond* b, int n, short t)
   }
 }
 
+void join_row(Site* a, Bond *b, int n, int start, int end) {
+  // loop through row
+  for(int i = start; i < end; ++i) {
+    // join to bottom neighbour
+    Site *s = &a[i];
+    Site *nb = bottom_neighbour(a, b, n, s);
+    if(!nb) continue;
+    // combine cluster
+    Cluster *sc = s->cluster;
+    Cluster *nc = nb->cluster;
+    sc->size += nc->size;
+    for(int i = 0; i < n; ++i) {
+      if(nc->rows[i]) {
+        if(!sc->rows[i]) sc->height++;
+        sc->rows[i] = 1;
+      }
+      if(nc->cols[i]) {
+        if(!sc->cols[i]) sc->width++;
+        sc->cols[i] = 1;
+      }
+    }
+    copy_cluster(sc, nc); // overwrite neighbour cluster
+  }
+}
+
 void join_clusters(Site* a, Bond* b, int n) {
 
-  // loop through last row of first block
-  for(int i = n*((n/2)-1); i < n*(n/2); ++i) {
-    // join to bottom neighbours
-
-  }
+  join_row(a, b, n, n*(n/2-1), n*(n/2));
+  join_row(a, b, n, n*(n/2), n*n);
 
   short perc = 0;
   int max_size = 0;
@@ -155,8 +185,6 @@ void join_clusters(Site* a, Bond* b, int n) {
     if(cl->size > max_size) max_size = cl->size;
     if(cl->width == n || cl->height == n) perc = 1; 
   }
-  // free_site_array(a, n);
-  // if(b) free_bond(b);
 
   printf("Perc: %s\n", perc ? "True" : "False");
   printf(" Max: %d\n", max_size);

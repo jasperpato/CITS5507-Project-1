@@ -15,6 +15,18 @@ Cluster* cluster(int r, int c, int n) {
   return cl;
 }
 
+/**
+ * @brief copies contents of c1 into c2
+ */
+void copy_cluster(Cluster *c1, Cluster *c2) {
+  c2->id = c1->id;
+  c2->rows = c1->rows;
+  c2->cols = c1->cols;
+  c2->height = c1->height;
+  c2->width = c1->width;
+  c2->size = c1->size;
+}
+
 void free_cluster(Cluster* cl) {
   free(cl->rows);
   free(cl->cols);

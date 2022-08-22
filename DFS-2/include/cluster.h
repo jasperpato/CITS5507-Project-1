@@ -9,6 +9,7 @@ typedef struct {
 } Cluster;
 
 Cluster* cluster(int, int, int);
+void copy_cluster(Cluster*, Cluster*);
 void free_cluster(Cluster*);
 
 #endif
