@@ -2,11 +2,15 @@
 #define SITE_H
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+
+#include "cluster.h"
 
 typedef struct {
-  int r, c, *size;
-  short occupied, marked;
-  short *rows, *cols; // boolean if site is connected to another site of that row/col
+  int r, c;
+  short occupied, seen;
+  Cluster *cluster;
 } Site;
 
 Site* site_array(int, float);

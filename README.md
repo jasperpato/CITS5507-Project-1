@@ -1,7 +1,29 @@
-# CITS5507 High Performance Computing - Project 1
+# CITS5507 HPC PROJECT 1
 
-Jasper Paterson and Allen Antony
+###To run:
 
-Notes:
+```console
+cd {version}/src
+make
+./percolate [-s | -b] [[-f FILENAME] | [LATTICE_SIZE PROBABILITY]]
+```
 
-- Lattice size defined as N > 1
+###Site file example:
+
+```
+X X O X
+O X O O
+X X X O
+X X X O
+```
+
+###Bond file example:
+
+```
+ | |
+-O-O O
+ | |
+ O O-O
+ |
+-O O-O
+```

@@ -5,7 +5,7 @@
 
 typedef struct {
   int r, c, *size;
-  short occupied, marked;
+  short occupied, seen;
   short *rows, *cols; // boolean if site is connected to another site of that row/col
 } Site;
 

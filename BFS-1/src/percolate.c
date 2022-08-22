@@ -6,7 +6,7 @@
 
 #include "site.h"
 #include "bond.h"
-#include "cluster.h"
+#include "queue.h"
 
 /**
  * @brief Check if a site has at least one bond to a neighbour (and can therefore be the start of a cluster)
@@ -16,15 +16,8 @@
  * @param b bond struct
  * @return short boolean true iff has at least one neighbour
  */
-short has_neighbours(Site* a, Bond* b, int n, Site* s)
+short has_neighbours(Site* a, int n, Site* s, Bond* b)
 {
-  // indices of neighbours
-  int is[] = {
-    s->r*n+(s->c+n-1)%n,   // left
-    s->r*n+(s->c+n+1)%n,   // right
-    ((s->r+n-1)%n)*n+s->c, // top
-    ((s->r+n+1)%n)*n+s->c  // bottom
-  };
   // indices of bonds
   int ib[] = {
     s->r*n+s->c,          // left
@@ -33,8 +26,8 @@ short has_neighbours(Site* a, Bond* b, int n, Site* s)
     ((s->r+n+1)%n)*n+s->c // bottom
   };
   for(int i = 0; i < 4; ++i) {
-    Site* nb = &a[is[i]];
-    if(!nb->seen && ((i<2 && b->h[ib[i]]) || (i>=2 && b->v[ib[i]]))) return 1;
+    // check for a bond to neighbour
+    if((i<2 && b->h[ib[i]]) || (i>=2 && b->v[ib[i]])) return 1;
   }
   return 0;
 }
@@ -48,7 +41,7 @@ short has_neighbours(Site* a, Bond* b, int n, Site* s)
  * @return Site** array of size 4 of neighbour's site pointers. Pointer is either a valid address
  *         if there is a connection to that neighbour, otherwise NULL
  */
-Site** get_neighbours(Site* a, Bond* b, int n, Site* s)
+Site** get_neighbours(Site* a, int n, Site* s, Bond* b)
 {
   // indices of neighbours
   int is[] = {
@@ -76,46 +69,70 @@ Site** get_neighbours(Site* a, Bond* b, int n, Site* s)
   return nbs;
 }
 
-void DFS(Site* a, Bond* b, int n, Site* s) {
-  Site** nbs = get_neighbours(a, b, n, s);
-  Cluster* cl = s->cluster;
-  for(int i = 0; i < 4; ++i) { // loop through connected, unseen neighbours
-    if(!nbs[i]) continue; 
-    Site* nb = nbs[i];
-    nb->cluster = cl;
-    cl->size++;
-    if(!cl->rows[nb->r]) cl->height++;
-    if(!cl->cols[nb->c]) cl->width++;
-    cl->rows[nb->r] = 1;
-    cl->cols[nb->c] = 1;
-    DFS(a, b, n, nb);
-  }
-}
-
 /**
- * @brief Simulate percolation using DFS. Outputs max cluster size and percolation boolean.
+ * @brief Simulate percolation using BFS. Outputs max cluster size and percolation boolean.
  * @param a site array
  * @param n size of site array
  * @param b bond struct, either valid address if [-b] or NUll if [-s]
  */
-void percolate(Site* a, Bond* b, int n)
+void percolate(Site* a, int n, Bond* b)
 {
-  for(int i = 0; i < n*n; ++i) {
-    if(a[i].occupied || (b && has_neighbours(a, b, n, &a[i]))) {
-      a[i].seen = 1;
-      a[i].cluster = cluster(i/n, i%n, n);
-      DFS(a, b, n, &a[i]);
+  Queue* q = queue(n*n); // circular queue
+  int max_size = 0;
+  for(int r = 0; r < n; ++r) {
+    for(int c = 0; c < n; ++c) {
+      Site* p = &a[r*n+c]; // Site that begins a new cluster
+      if((!b && p->occupied) || (b && has_neighbours(a, n, p, b))) {
+        p->seen = 1;
+        max_size = max_size ? max_size : 1;
+
+        // allocate memory for rows, cols of this new cluster (every site in cluster shares these)
+        p->rows = calloc(n, sizeof(short));
+        p->cols = calloc(n, sizeof(short));
+        p->rows[r] = 1;
+        p->cols[c] = 1;
+
+        enqueue(q, p);
+      }
+      while(!is_empty(q)) {
+        Site* s = dequeue(q); // next site in the current cluster
+        Site** nbs = get_neighbours(a, n, s, b);
+        for(int i = 0; i < 4; ++i) {
+          if(nbs[i]) { // loop through connected, unseen neighbours
+            Site* nb = nbs[i];
+
+            // update s and n
+            *(s->size) += 1;
+            nb->size = s->size;
+            if(*(nb->size) > max_size) max_size = *(nb->size);
+
+            nb->rows = s->rows;
+            nb->cols = s->cols;
+            nb->rows[nb->r] = 1;
+            nb->cols[nb->c] = 1;
+
+            enqueue(q, nb);
+          }
+        }
+      }
     }   
   }
-  short perc = 0;
-  int max_size = 0;
-  for(int i = 0; i < n*n; ++i) {
-    Cluster *cl = a[i].cluster;
-    if(cl) continue;
-    if(cl->size > max_size) max_size = cl->size;
-    if(cl->width == n || cl->height == n) perc = 1; 
-  }
+  free_queue(q);
 
+  // find whether lattice percolates (this could be parallelised)
+  short perc = 0;
+  for(int r = 0; r < n; ++r) {
+    for(int c = 0; c < n; ++c) {
+        Site* s = &a[r*n+c];
+        if((!b && s->occupied) || (b && has_neighbours(a, n, s, b))) {
+          int rs = 0, cs = 0;
+          for(int i = 0; i < n; ++i) rs += s->rows[i];
+          for(int i = 0; i < n; ++i) cs += s->cols[i];
+          if(rs == n || cs == n) perc = 1;
+        }
+        // else: rows and cols memory will not have been allocated
+    }
+  }
   free_site_array(a, n);
   if(b) free_bond(b);
 
@@ -134,12 +151,13 @@ int main(int argc, char *argv[])
   Bond* b = NULL;
   int n = 0;
   float p = -1.0;
-  short site = 1;
+  short site = 1, t = 0;
   char* fname = NULL;
 
   int c;
-  while ((c = getopt (argc, argv, "sbf:")) != -1) {
+  while ((c = getopt(argc, argv, "sbtf:")) != -1) {
     if(c == 'b') site = 0;
+    else if(c == 't') t = 1;
     else if(c == 'f') {
       if(!optarg) return 0;
       fname = optarg;
@@ -184,10 +202,10 @@ int main(int argc, char *argv[])
       print_bond(b, n);
     }
   }
-  printf("\nv2\nN: %d\n", n);
+  printf("\nBFS 1-Thread\n\nN: %d\n", n);
   if(p != -1.0) printf("P: %.2f\n", p);
   printf("\n");
-  percolate(a, b, n);
+  percolate(a, n, b);
   printf("Time: %.4f\n", (double)(clock()-start)/CLOCKS_PER_SEC);
   return 0;
 }

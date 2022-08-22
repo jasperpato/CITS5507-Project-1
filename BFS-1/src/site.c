@@ -1,4 +1,7 @@
 #include "site.h"
+#include <stdio.h>
+#include <math.h>
+#include <time.h>
 
 /**
  * @param n size of 2D site array
@@ -9,13 +12,19 @@
  */
 Site* site_array(int n, float p)
 {
+  clock_t start = clock();
   Site* sites = calloc(n*n, sizeof(Site));
-  for(int i = 0; i < n*n; ++i) {
-    sites[i].r = i/n;
-    sites[i].c = i%n;
-    if(p > 0) {
-      if((double)rand()/(double)RAND_MAX < p) sites[i].occupied = 1;
-      else sites[i].occupied = 0; 
+  for(int r = 0; r < n; ++r) {
+    for(int c = 0; c < n; ++c) {
+      sites[r*n+c].r = r;
+      sites[r*n+c].c = c;
+      sites[r*n+c].size = malloc(sizeof(int));
+      *(sites[r*n+c].size) = 1;
+      // NOTE: not allocating memory for rows, cols until required
+      if(p > 0) {
+        if((double)rand()/(double)RAND_MAX < p) sites[r*n+c].occupied = 1;
+        else sites[r*n+c].occupied = 0; 
+      }
     }
   }
   return sites;
@@ -50,6 +59,8 @@ Site* file_site_array(char* filename, int* n) {
     }
     s[r*(*n)+c].r = r;
     s[r*(*n)+c].c = c;
+    s[r*(*n)+c].size = malloc(sizeof(int));
+    *(s[r*(*n)+c].size) = 1;
 
     if(ch == 'X') s[r*(*n)+c].occupied = 1;
     else s[r*(*n)+c].occupied = 0;
@@ -59,10 +70,15 @@ Site* file_site_array(char* filename, int* n) {
   return s;
 }
 
-void free_site_array(Site* a, int n)
+void free_site_array(Site* s, int n)
 {
-  for(int i = 0; i < n*n; ++i) free_cluster(a[i].cluster);
-  free(a);
+  for(int r = 0; r < n; ++r) {
+    for(int c = 0; c < n; ++c) {
+      free(s[r*n+c].rows);
+      free(s[r*n+c].cols);
+    }
+  }
+  free(s);
 }
 
 void print_site_array(Site* a, int n)
