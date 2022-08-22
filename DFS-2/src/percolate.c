@@ -42,6 +42,19 @@ short has_neighbours(Site* a, Bond* b, int n, Site* s, short t)
 }
 
 /**
+ * @return bottom neighbour if connected and separate cluster NULL
+ */
+Site* bottom_neighbour(Site* a, Bond* b, int n, Site* s)
+{
+  int is = ((s->r+n+1)%n)*n+s->c;
+  int ib = ((s->r+n+1)%n)*n+s->c;
+  Site *nb = &a[is];
+  if((!b && !nb->occupied) || (b && !b->v[ib])) return NULL;
+  if(nb->cluster && s->cluster->id == nb->cluster->id) return NULL;
+  return nb;
+}
+
+/**
  * @brief Get an array of neighbour's site pointers
  * @param a site array
  * @param n size of site array
@@ -109,7 +122,7 @@ void DFS(Site* a, Bond* b, int n, Site* s, short t, short* err) {
 void percolate(Site* a, Bond* b, int n, short t)
 {
   short err = 0;
-  for(int i = t*n*n/2; i < (t+1)*n*n/2; ++i) {
+  for(int i = t*n*(n/2); i < (t+1)*n*(n/2); ++i) {
     if(!a[i].seen && (a[i].occupied || (b && has_neighbours(a, b, n, &a[i], t)))) {
       a[i].seen = 1;
       a[i].cluster = cluster(i/n, i%n, n);
@@ -129,8 +142,9 @@ void percolate(Site* a, Bond* b, int n, short t)
 void join_clusters(Site* a, Bond* b, int n) {
 
   // loop through last row of first block
-  for(int i = n*n/2-n; i < n*n/2; ++i) {
-    
+  for(int i = n*((n/2)-1); i < n*(n/2); ++i) {
+    // join to bottom neighbours
+
   }
 
   short perc = 0;
