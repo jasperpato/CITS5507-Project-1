@@ -1,5 +1,5 @@
 IDIR = ../include
-CC = /usr/local/bin/gcc-12
+CC = ${CC} # /usr/local/bin/gcc-12
 CFLAGS = -I$(IDIR) -std=c11 -Wall -Werror -fopenmp
 
 ODIR = obj

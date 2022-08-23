@@ -3,7 +3,7 @@
 #include <time.h>
 #include <string.h>
 #include <unistd.h>
-#include </usr/local/Cellar/gcc/12.1.0/lib/gcc/current/gcc/x86_64-apple-darwin21/12/include/omp.h>
+#include <omp.h>
 
 #include "../include/site.h"
 #include "../include/bond.h"
