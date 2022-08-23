@@ -1,6 +1,6 @@
 IDIR = ../include
 # CC = /usr/local/bin/gcc-12
-CFLAGS = -I$(IDIR) -std=c11 -Wall -Werror -fopenmp
+CFLAGS = -I$(IDIR) -std=c11 -Wall -Werror -fopenmp -lm
 
 ODIR = obj
 LDIR = ../lib
