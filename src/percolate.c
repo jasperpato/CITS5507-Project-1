@@ -167,7 +167,7 @@ void join_row(Site* a, Bond *b, int start, int end) {
       }
     }
     // find neighbour's cluster sites and reassign all cluster pointers (inefficient)
-    for(int j = 0; j < N; ++j) {
+    for(int j = 0; j < N*N; ++j) {
       if(!a[j].cluster) continue;
       if(a[j].cluster->id == nc->id) a[j].cluster = sc;
     }
@@ -192,7 +192,7 @@ void join_clusters(Site* a, Bond* b) {
 void scan_site_array(Site* a) {
   short perc = 0;
   int max_size = 0;
-  #pragma omp parallel for reduction(max: max_size)
+  // #pragma omp parallel for reduction(max: max_size)
   for(int i = 0; i < N*N; ++i) {
     Cluster *cl = a[i].cluster;
     if(!cl) continue;

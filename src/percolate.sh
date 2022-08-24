@@ -2,7 +2,6 @@
 # Script for overwriting N and N_THREADS in constant.h before executing program.
 #
 # USAGE
-#
 #  ./percolate.sh  [-s | -b]  N  P  [N_THREADS]
 # OR
 #  ./percolate.sh  [-s | -b]  -f  FILENAME  N  [N_THREADS]
@@ -11,24 +10,24 @@
 
 if [ $1 == "-s"  ] || [ $1 == "-b" ]; then
 
-export CC=/usr/local/bin/gcc-12
+  export CC=/usr/local/bin/gcc-12
 
-if [[ $2 == "-f" ]]; then
-  if [[ $5 ]]; then
-    ./util/params $4 $5
+  if [[ $2 == "-f" ]]; then
+    if [[ $5 ]]; then
+      ./util/params $4 $5
+    else
+      ./util/params $4 1
+    fi
+    make percolate
+    ./percolate $1 -f $3
   else
-    ./util/params $4 1
+    if [[ $4 ]]; then
+      ./util/params $2 $4 
+    else
+      ./util/params $2 1
+    fi
+    make percolate
+    ./percolate $1 $3
   fi
-  make percolate
-  ./percolate $1 -f $3
-else
-  if [[ $4 ]]; then
-    ./util/params $2 $4 
-  else
-    ./util/params $2 1
-  fi
-  make percolate
-  ./percolate $1 $3
-fi
 
 fi
