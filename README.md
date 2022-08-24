@@ -1,13 +1,5 @@
 # CITS5507 HPC PROJECT 1
 
-###To run:
-
-```console
-cd {version}/src
-make
-./percolate [-s | -b] [[-f FILENAME] | [LATTICE_SIZE PROBABILITY]]
-```
-
 ###Site file example:
 
 ```
