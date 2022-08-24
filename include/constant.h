@@ -1,2 +1,2 @@
-#define N 4000
-#define N_THREADS 2
+#define N 400
+#define N_THREADS 1
