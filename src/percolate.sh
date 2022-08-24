@@ -10,7 +10,7 @@
 
 if [ $1 == "-s"  ] || [ $1 == "-b" ]; then
 
-  export CC=/usr/local/bin/gcc-12
+  # export CC=/usr/local/bin/gcc-12
 
   if [[ $2 == "-f" ]]; then
     if [[ $5 ]]; then

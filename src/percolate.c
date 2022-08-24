@@ -169,9 +169,8 @@ void join_row(Site* a, Bond *b, int start, int end) {
     // find neighbour's cluster sites and reassign all cluster pointers (inefficient)
     for(int j = 0; j < N*N; ++j) {
       if(!a[j].cluster) continue;
-      if(a[j].cluster->id == nc->id) a[j].cluster = sc;
+      if(a[j].cluster->id == nc->id) a[j].cluster = sc; 
     }
-    // copy_cluster(sc, nc); // overwrite neighbour cluster with s->cluster
   }
 }
 
