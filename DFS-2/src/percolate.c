@@ -174,6 +174,7 @@ void join_clusters(Site* a, Bond* b, int n) {
 
   short perc = 0;
   int max_size = 0;
+  #pragma omp parallel for reduction(max: max_size)
   for(int i = 0; i < n*n; ++i) {
     Cluster *cl = a[i].cluster;
     if(!cl) continue;
@@ -255,7 +256,6 @@ int main(int argc, char *argv[])
   {
     percolate(a, b, n, omp_get_thread_num());
   }
-  printf("Time before join: %.4f\n", (double)(clock()-start)/CLOCKS_PER_SEC);
   join_clusters(a, b, n);
   printf("Time: %.4f\n", (double)(clock()-start)/CLOCKS_PER_SEC);
   return 0;
