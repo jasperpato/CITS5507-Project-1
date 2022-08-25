@@ -175,12 +175,11 @@ void join_row(Site* a, Bond *b, int start, int end, int *err) {
         sc->cols[i] = 1;
       }
     }
-    sc->sites = realloc(sc->sites, sc->size);
+    sc->sites = realloc(sc->sites, sc->size*sizeof(int));
     if(!sc->sites) {
       *err = 1;
       return;
     }
-
     // find neighbour's cluster sites and reassign all cluster pointers (inefficient)
     // for(int j = 0; j < N*N; ++j) {
     //   if(!a[j].cluster) continue;
@@ -190,10 +189,9 @@ void join_row(Site* a, Bond *b, int start, int end, int *err) {
     // reassign neighbour sites to single cluster
     // int* nc_sites = (int*)calloc(nc_size, sizeof(int)); // make copy of neighbour site index array
     // memcpy(nc_sites, nc->sites, nc_size*sizeof(int));
-
     for(int j = 0; j < nc->size; ++j) {
       int ix = nc->sites[j];
-      sc->sites[j+sc_size-1] = ix;
+      sc->sites[j+sc_size] = ix;
       if(ix == nb->r*N+nb->c) continue; // don't overwrite neighbour until last
       a[ix].cluster = sc;
     }
