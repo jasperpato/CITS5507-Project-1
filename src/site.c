@@ -17,7 +17,6 @@ Site* site_array(float p)
       if((double)rand()/(double)RAND_MAX < p) sites[i].occupied = 1;
       else sites[i].occupied = 0; 
     }
-    // sites[i].cluster = (Cluster**)calloc(1, sizeof(Cluster*));
   }
   return sites;
 }
@@ -47,20 +46,11 @@ Site* file_site_array(char* filename) {
 
     if(ch == 'X') s[r*N+c].occupied = 1;
     else s[r*N+c].occupied = 0;
-    // s[r*N+c].cluster = (Cluster**)calloc(1, sizeof(Cluster*));
     ++c;
   }
   fclose(f);
   return s;
 }
-
-// void free_site_array(Site* a)
-// {
-//   for(int i = 0; i < N*N; ++i) {
-//     if(a[i].cluster) free_cluster(a[i].cluster);
-//   }
-//   free(a);
-// }
 
 void print_site_array(Site* a)
 {

@@ -77,13 +77,6 @@ Bond* file_bond(char* filename)
   return b;
 }
 
-void free_bond(Bond* b)
-{
-  free(b->v);
-  free(b->h);
-  free(b);
-}
-
 void print_bond(Bond* b)
 {
   if(N > 40) return;

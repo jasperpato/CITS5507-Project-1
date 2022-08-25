@@ -107,11 +107,19 @@ void DFS(Site* a, Bond* b, Site* s, short tid, short* err) {
     if(!nbs[i]) continue; 
     Site* nb = nbs[i];
     nb->cluster = cl;
-    cl->size++;
     if(!cl->rows[nb->r]) cl->height++;
     if(!cl->cols[nb->c]) cl->width++;
     cl->rows[nb->r] = 1;
     cl->cols[nb->c] = 1;
+    cl->size++;
+    if(cl->size > EST_CLUSTER_SIZE) {
+      cl->sites = realloc(cl->sites, cl->size*sizeof(int)); // grow site index array
+      if(!cl->sites) {
+        *err = 1;
+        return;
+      }
+    }
+    cl->sites[cl->size-1] = nb->r*N+nb->c; // add index of neighbour to cluster's site index array
     DFS(a, b, nb, tid, err);
   }
 }
@@ -147,7 +155,7 @@ void percolate(Site* a, Bond* b, short tid)
 /**
  * @brief merges clusters along the bottom border of row
  */
-void join_row(Site* a, Bond *b, int start, int end) {
+void join_row(Site* a, Bond *b, int start, int end, int *err) {
   for(int i = start; i < end; ++i) { // loop along row
     Site *s = &a[i];
     Site *nb = bottom_neighbour(a, b, s);
@@ -155,6 +163,7 @@ void join_row(Site* a, Bond *b, int start, int end) {
     // else update s->cluster
     Cluster *sc = s->cluster;
     Cluster *nc = nb->cluster;
+    int sc_size = sc->size; // , nc_size = nc->size;
     sc->size += nc->size;
     for(int i = 0; i < N; ++i) {
       if(nc->rows[i]) {
@@ -166,11 +175,30 @@ void join_row(Site* a, Bond *b, int start, int end) {
         sc->cols[i] = 1;
       }
     }
-    // find neighbour's cluster sites and reassign all cluster pointers (inefficient)
-    for(int j = 0; j < N*N; ++j) {
-      if(!a[j].cluster) continue;
-      if(a[j].cluster->id == nc->id) a[j].cluster = sc; 
+    sc->sites = realloc(sc->sites, sc->size);
+    if(!sc->sites) {
+      *err = 1;
+      return;
     }
+
+    // find neighbour's cluster sites and reassign all cluster pointers (inefficient)
+    // for(int j = 0; j < N*N; ++j) {
+    //   if(!a[j].cluster) continue;
+    //   if(a[j].cluster->id == nc->id) a[j].cluster = sc; 
+    // }
+
+    // reassign neighbour sites to single cluster
+    // int* nc_sites = (int*)calloc(nc_size, sizeof(int)); // make copy of neighbour site index array
+    // memcpy(nc_sites, nc->sites, nc_size*sizeof(int));
+
+    for(int j = 0; j < nc->size; ++j) {
+      int ix = nc->sites[j];
+      sc->sites[j+sc_size-1] = ix;
+      if(ix == nb->r*N+nb->c) continue; // don't overwrite neighbour until last
+      a[ix].cluster = sc;
+    }
+    // now overwrite neighbour
+    nb->cluster = sc; 
   }
 }
 
@@ -184,7 +212,12 @@ void join_clusters(Site* a, Bond* b) {
     int start = i*N*(N/N_THREADS);
     int end = (i+1)*N*(N/N_THREADS);
     if(i+1 == N_THREADS) end = N*N;
-    join_row(a, b, start, end);
+    int err = 0;
+    join_row(a, b, start, end, &err);
+    if(err) {
+      printf("Memory error.\n");
+      return;
+    }
   }
 }
 
