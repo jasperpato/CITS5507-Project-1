@@ -8,13 +8,12 @@
 #include "./site.h"
 #include "./constant.h"
 
-typedef struct {
+typedef struct Bond {
   short *v, *h;
 } Bond;
 
 Bond* bond(float);
 Bond* file_bond(char*);
-void free_bond(Bond*);
 void print_bond(Bond*);
 
 #endif

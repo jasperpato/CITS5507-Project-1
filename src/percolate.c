@@ -299,7 +299,9 @@ int main(int argc, char *argv[])
 
   omp_set_num_threads(N_THREADS);
   #pragma omp parallel
-  percolate(a, b, omp_get_thread_num());
+  {
+    percolate(a, b, omp_get_thread_num());
+  }
   if(N_THREADS > 1) join_clusters(a, b);
   scan_site_array(a);
   printf("Time: %.4f\n", (double)(clock()-start)/CLOCKS_PER_SEC);
