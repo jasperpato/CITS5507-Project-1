@@ -11,6 +11,6 @@ typedef struct Cluster {
   int* sites;
 } Cluster;
 
-Cluster* cluster(int, int);
+Cluster* cluster(int, int, int);
 
 #endif

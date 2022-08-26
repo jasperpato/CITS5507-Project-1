@@ -1,6 +1,6 @@
 #include "../include/cluster.h"
 
-Cluster* cluster(int r, int c) {
+Cluster* cluster(int r, int c, int est_size) {
   Cluster *cl = (Cluster*)calloc(1, sizeof(Cluster));
   if(!cl) return NULL;
   cl->rows = (short*)calloc(N, sizeof(short));
@@ -12,7 +12,7 @@ Cluster* cluster(int r, int c) {
   cl->height = 1;
   cl->width = 1;
   cl->size = 1;
-  cl->sites = calloc(EST_CLUSTER_SIZE, sizeof(int));
+  cl->sites = calloc(est_size, sizeof(int));
   if(!cl->sites) return NULL;
   cl->sites[0] = r*N+c;
   return cl;
