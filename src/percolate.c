@@ -211,22 +211,20 @@ void join_clusters(Site* a, Bond* b) {
 }
 
 void scan_site_array(Site* a, short *perc, int *max) {
+  
   short p = 0;
   int m = 0;
+  int skip = 0;
   // #pragma omp parallel for reduction(max: max_size)
   for(int i = 0; i < N*N; ++i) {
     Cluster *cl = a[i].cluster;
-    if(!cl) continue;
+    if(!cl) {skip++; continue;}
     if(cl->size > m) m = cl->size;
     if(p) continue;
-    if(cl->width == N || cl->height == N) p = 1; 
+    if(cl->width == N || cl->height == N) p = 1;
   }
   *perc = p;
   *max = m;
-}
-
-void scan_array(Site *a, short *p, int *max) {
-
 }
 
 /**
@@ -299,7 +297,7 @@ int main(int argc, char *argv[])
   omp_set_num_threads(N_THREADS);
   
   clock_t init = clock();
-  printf("\n Init time: %.4f\n", (double)(init-start)/CLOCKS_PER_SEC);
+  printf("\n Init time: %7.4f\n", (double)(init-start)/CLOCKS_PER_SEC);
   
   // each thread keeps an array of its cluster pointers 
   // Cluster ***cls = calloc(N_THREADS, sizeof(Cluster**));
@@ -310,18 +308,18 @@ int main(int argc, char *argv[])
     percolate(a, b, est_size, omp_get_thread_num());
   }
   clock_t perc_t = clock();
-  printf(" Perc time: %.4f\n", (double)(perc_t-init)/CLOCKS_PER_SEC);
+  printf(" Perc time: %7.4f %7.4f\n", (double)(perc_t-init)/CLOCKS_PER_SEC, (double)(perc_t-start)/CLOCKS_PER_SEC);
 
   if(N_THREADS > 1) join_clusters(a, b);
   clock_t join = clock();
-  printf(" Join time: %.4f\n", (double)(join-perc_t)/CLOCKS_PER_SEC);
+  printf(" Join time: %7.4f %7.4f\n", (double)(join-perc_t)/CLOCKS_PER_SEC, (double)(join-start)/CLOCKS_PER_SEC);
   
   short perc = 0;
   int max = 0;
   scan_site_array(a, &perc, &max);
-  printf(" Scan time: %.4f\n", (double)(clock()-join)/CLOCKS_PER_SEC);
+  printf(" Scan time: %7.4f %7.4f\n", (double)(clock()-join)/CLOCKS_PER_SEC, (double)(clock()-start)/CLOCKS_PER_SEC);
 
-  printf("Total time: %.4f\n", (double)(clock()-start)/CLOCKS_PER_SEC);
+  printf("Total time: %7.4f\n", (double)(clock()-start)/CLOCKS_PER_SEC);
 
   printf("\nPerc: %s\n Max: %d\n", perc ? "True" : "False", max);
   return 0;
