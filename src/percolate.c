@@ -215,7 +215,7 @@ void scan_site_array(Site* a, short *perc, int *max) {
   short p = 0;
   int m = 0;
   int skip = 0;
-  // #pragma omp parallel for reduction(max: max_size)
+  // #pragma omp parallel for reduction(max: m)
   for(int i = 0; i < N*N; ++i) {
     Cluster *cl = a[i].cluster;
     if(!cl) {skip++; continue;}
@@ -277,6 +277,7 @@ int main(int argc, char *argv[])
       return 0;
     }
     p = atof(argv[optind]);
+    if(p > 1.0) p = 1.0;
     srand(time(NULL));
     if(site) {
       a = site_array(p);
@@ -291,36 +292,36 @@ int main(int argc, char *argv[])
   if(p != -1.0) printf("P: %.2f\n", p);
 
   // estimated mean cluster size
-  int est_size = p != -1 ? N*p : N/2;
+  int est_size = p != -1 ? N*p*(1-p)+1 : N/4;
   // int est_num = N/2;
+
+  // each thread keeps an array of its cluster pointers 
+  // Cluster ***cls = calloc(N_THREADS, sizeof(Cluster**));
+  // for(int i = 0; i < N_THREADS; ++i) cls[i] = calloc(est_num, sizeof(Cluster*));
 
   omp_set_num_threads(N_THREADS);
   
   clock_t init = clock();
-  printf("\n Init time: %7.4f\n", (double)(init-start)/CLOCKS_PER_SEC);
-  
-  // each thread keeps an array of its cluster pointers 
-  // Cluster ***cls = calloc(N_THREADS, sizeof(Cluster**));
-  // for(int i = 0; i < N_THREADS; ++i) cls[i] = calloc(est_num, sizeof(Cluster*));
+  printf("\n Init time: %9.6f\n", (double)(init-start)/CLOCKS_PER_SEC);
 
   #pragma omp parallel
   {
     percolate(a, b, est_size, omp_get_thread_num());
   }
   clock_t perc_t = clock();
-  printf(" Perc time: %7.4f %7.4f\n", (double)(perc_t-init)/CLOCKS_PER_SEC, (double)(perc_t-start)/CLOCKS_PER_SEC);
+  printf(" Perc time: %9.6f %9.6f\n", (double)(perc_t-init)/CLOCKS_PER_SEC, (double)(perc_t-start)/CLOCKS_PER_SEC);
 
   if(N_THREADS > 1) join_clusters(a, b);
   clock_t join = clock();
-  printf(" Join time: %7.4f %7.4f\n", (double)(join-perc_t)/CLOCKS_PER_SEC, (double)(join-start)/CLOCKS_PER_SEC);
+  printf(" Join time: %9.6f %9.6f\n", (double)(join-perc_t)/CLOCKS_PER_SEC, (double)(join-start)/CLOCKS_PER_SEC);
   
   short perc = 0;
   int max = 0;
   scan_site_array(a, &perc, &max);
-  printf(" Scan time: %7.4f %7.4f\n", (double)(clock()-join)/CLOCKS_PER_SEC, (double)(clock()-start)/CLOCKS_PER_SEC);
+  printf(" Scan time: %9.6f %9.6f\n", (double)(clock()-join)/CLOCKS_PER_SEC, (double)(clock()-start)/CLOCKS_PER_SEC);
 
-  printf("Total time: %7.4f\n", (double)(clock()-start)/CLOCKS_PER_SEC);
+  printf("Total time: %9.6f\n", (double)(clock()-start)/CLOCKS_PER_SEC);
 
-  printf("\nPerc: %s\n Max: %d\n", perc ? "True" : "False", max);
+  printf("\nPerc: %s\n Max: %d\n\n", perc ? "True" : "False", max);
   return 0;
 }

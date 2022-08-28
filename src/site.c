@@ -56,7 +56,7 @@ void print_site_array(Site* a)
 {
   if(N > 40) return;
   int s = (int)log10(N-1) + 1;
-  printf(" ");
+  printf("\n ");
   for(int i = 0; i < s; ++i) printf(" ");
   for(int c = 0; c < N; ++c) printf("\033[0;34m %*d\033[0;30m", s, c);
   printf("\n\n");

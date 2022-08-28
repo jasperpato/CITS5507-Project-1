@@ -81,6 +81,7 @@ void print_bond(Bond* b)
 {
   if(N > 40) return;
   int s = (int)log10(N-1) + 1;
+  printf("\n");
   for(int i = 0; i < s; ++i) printf(" ");
   printf(" ");
   for(int c = 0; c < N; ++c) printf("\033[0;34m %*d\033[0;30m", s, c);
