@@ -11,8 +11,8 @@ Bond* bond(float p)
 {
   Bond* b = calloc(1, sizeof(Bond));
   if(!b) return NULL;
-  b->v = calloc(N*N, sizeof(short));
-  b->h = calloc(N*N, sizeof(short));
+  b->v = calloc(NUM_SITES, sizeof(short));
+  b->h = calloc(NUM_SITES, sizeof(short));
   if(!b->v || !b->h) return NULL;
   for(int r = 0; r < N; ++r) {
     for(int c = 0; c < N; ++c) {
@@ -34,8 +34,8 @@ Bond* file_bond(char* filename)
 {
   Bond* b = calloc(1, sizeof(Bond));
   if(!b) return NULL;
-  b->v = calloc(N*N, sizeof(short));
-  b->h = calloc(N*N, sizeof(short));
+  b->v = calloc(NUM_SITES, sizeof(short));
+  b->h = calloc(NUM_SITES, sizeof(short));
   if(!b->v || !b->h) return NULL;
 
   int ch, r = 0, c = 0, v_count = 0;

@@ -8,9 +8,9 @@
  */
 Site* site_array(float p)
 {
-  Site* sites = calloc(N*N, sizeof(Site));
+  Site* sites = calloc(NUM_SITES, sizeof(Site));
   if(!sites) return NULL;
-  for(int i = 0; i < N*N; ++i) {
+  for(int i = 0; i < NUM_SITES; ++i) {
     sites[i].r = i/N;
     sites[i].c = i%N;
     if(p > 0) {
@@ -27,7 +27,7 @@ Site* site_array(float p)
  * @return Site* site array scanned from file
  */
 Site* file_site_array(char* filename) {
-  Site* s = calloc(N*N, sizeof(Site));
+  Site* s = calloc(NUM_SITES, sizeof(Site));
   if(!s) return NULL;
 
   int ch, r = 0, c = 0;

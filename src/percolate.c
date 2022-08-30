@@ -79,7 +79,7 @@ Site** get_neighbours(Site* a, Bond* b, Site* s, short tid)
     // either check site occupation or bond struct
     int start = tid*N*(N/N_THREADS);
     int end = (tid+1)*N*(N/N_THREADS);
-    if(tid+1 == N_THREADS) end = N*N;
+    if(tid+1 == N_THREADS) end = NUM_SITES;
     if(is[i] < start || is[i] >= end) nbs[i] = NULL; // out of thread bounds
     else if(!nb->seen && (
       (!b && nb->occupied) ||
@@ -95,7 +95,7 @@ Site** get_neighbours(Site* a, Bond* b, Site* s, short tid)
 /**
  * @brief loop through neighbours and update cluster
  */
-void DFS(Site* a, Bond* b, Site* s, int est_size, short tid, short* err) {
+void DFS(Site* a, Bond* b, Site* s, short tid, short* err) {
   Site** nbs = get_neighbours(a, b, s, tid);
   if(!nbs) {
     *err = 1;
@@ -111,16 +111,9 @@ void DFS(Site* a, Bond* b, Site* s, int est_size, short tid, short* err) {
     if(!cl->cols[nb->c]) cl->width++;
     cl->rows[nb->r] = 1;
     cl->cols[nb->c] = 1;
+    cl->sites[cl->size] = nb->r*N+nb->c; // add index of neighbour to cluster's site index array
     cl->size++;
-    if(cl->size > est_size) {
-      cl->sites = realloc(cl->sites, cl->size*sizeof(int)); // grow site index array
-      if(!cl->sites) {
-        *err = 1;
-        return;
-      }
-    }
-    cl->sites[cl->size-1] = nb->r*N+nb->c; // add index of neighbour to cluster's site index array
-    DFS(a, b, nb, est_size, tid, err);
+    DFS(a, b, nb, tid, err);
   }
 }
 
@@ -129,21 +122,21 @@ void DFS(Site* a, Bond* b, Site* s, int est_size, short tid, short* err) {
  * @param a site array
  * @param b bond struct, either valid address if [-b] or NUll if [-s]
  */
-void percolate(Site* a, Bond* b, int est_size, short tid)
+void percolate(Site* a, Bond* b, short tid)
 {
   short err = 0;
   int start = tid*N*(N/N_THREADS);
   int end = (tid+1)*N*(N/N_THREADS);
-  if(tid+1 == N_THREADS) end = N*N; // last block may be larger
+  if(tid+1 == N_THREADS) end = NUM_SITES; // last block may be larger
   for(int i = start; i < end; ++i) {
     if(!a[i].seen && ((!b && a[i].occupied) || (b && (has_neighbours(a, b, &a[i]))))) {
       a[i].seen = 1;
-      a[i].cluster = cluster(i/N, i%N, est_size);
+      a[i].cluster = cluster(i/N, i%N);
       if(!a[i].cluster) {
         printf("Memory error.\n");
         return;
       }
-      DFS(a, b, &a[i], est_size, tid, &err);
+      DFS(a, b, &a[i], tid, &err);
       if(err) {
         printf("Memory error.\n");
         return;
@@ -175,11 +168,6 @@ void join_row(Site* a, Bond *b, int start, int end, int *err) {
         sc->cols[i] = 1;
       }
     }
-    sc->sites = realloc(sc->sites, sc->size*sizeof(int));
-    if(!sc->sites) {
-      *err = 1;
-      return;
-    }
     for(int j = 0; j < nc->size; ++j) {
       int ix = nc->sites[j];
       sc->sites[j+sc_size] = ix;
@@ -196,11 +184,10 @@ void join_row(Site* a, Bond *b, int start, int end, int *err) {
  * WRONG RESULT WHEN JOINING ALTERNATING CLUSTERS ALONG BORDER
  */
 void join_clusters(Site* a, Bond* b) {
-
   for(int i = 0; i < N_THREADS; ++i) {
     int start = i*N*(N/N_THREADS);
     int end = (i+1)*N*(N/N_THREADS);
-    if(i+1 == N_THREADS) end = N*N;
+    if(i+1 == N_THREADS) end = NUM_SITES;
     int err = 0;
     join_row(a, b, start, end, &err);
     if(err) {
@@ -211,14 +198,12 @@ void join_clusters(Site* a, Bond* b) {
 }
 
 void scan_site_array(Site* a, short *perc, int *max) {
-  
   short p = 0;
   int m = 0;
-  int skip = 0;
   // #pragma omp parallel for reduction(max: m)
-  for(int i = 0; i < N*N; ++i) {
+  for(int i = 0; i < NUM_SITES; ++i) {
     Cluster *cl = a[i].cluster;
-    if(!cl) {skip++; continue;}
+    if(!cl) continue;
     if(cl->size > m) m = cl->size;
     if(p) continue;
     if(cl->width == N || cl->height == N) p = 1;
@@ -291,13 +276,12 @@ int main(int argc, char *argv[])
   printf("\n%s %d-Thread\n\nN: %d\n", site ? "Site" : "Bond", N_THREADS, N);
   if(p != -1.0) printf("P: %.2f\n", p);
 
-  // estimated mean cluster size
-  int est_size = p != -1 ? N*p*(1-p)+1 : N/4;
-  // int est_num = N/2;
-
   // each thread keeps an array of its cluster pointers 
-  // Cluster ***cls = calloc(N_THREADS, sizeof(Cluster**));
-  // for(int i = 0; i < N_THREADS; ++i) cls[i] = calloc(est_num, sizeof(Cluster*));
+  // Cluster ***cls;
+  // if(N_THREADS > 1) {
+  //   cls = calloc(N_THREADS, sizeof(Cluster**));
+  //   for(int i = 0; i < N_THREADS; ++i) cls[i] = calloc(MAX_CLUSTERS, sizeof(Cluster*));
+  // }
 
   omp_set_num_threads(N_THREADS);
   
@@ -306,8 +290,10 @@ int main(int argc, char *argv[])
 
   #pragma omp parallel
   {
-    percolate(a, b, est_size, omp_get_thread_num());
+    int num = omp_get_thread_num();
+    percolate(a, b, num);
   }
+
   clock_t perc_t = clock();
   printf(" Perc time: %9.6f %9.6f\n", (double)(perc_t-init)/CLOCKS_PER_SEC, (double)(perc_t-start)/CLOCKS_PER_SEC);
 
