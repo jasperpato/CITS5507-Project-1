@@ -248,6 +248,7 @@ int main(int argc, char *argv[])
 
   int max_threads = omp_get_max_threads();
   if(n_threads > max_threads) n_threads = max_threads;
+  if(n_threads > n) n_threads = n;
   omp_set_num_threads(n_threads);
   CPArray* cpa = cluster_array(n_threads, max_clusters); // each thread keeps an array of its cluster pointers 
 
