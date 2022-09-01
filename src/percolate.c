@@ -246,11 +246,13 @@ int main(int argc, char *argv[])
   }
   int max_clusters = n % 2 == 0 ? n*n/2 : (n-1)*(n-1)/2+1;
 
-  printf("\n%s %d-Thread\n\nN: %d\n", site ? "Site" : "Bond", n_threads, n);
-  if(p != -1.0) printf("P: %.2f\n", p);
-
-  CPArray* cpa = cluster_array(n_threads, max_clusters); // each thread keeps an array of its cluster pointers 
+  int max_threads = omp_get_max_threads();
+  if(n_threads > max_threads) n_threads = max_threads;
   omp_set_num_threads(n_threads);
+  CPArray* cpa = cluster_array(n_threads, max_clusters); // each thread keeps an array of its cluster pointers 
+
+  printf("\n%s %d-Thread (max %d)\n\nN: %d\n", site ? "Site" : "Bond", n_threads, max_threads, n);
+  if(p != -1.0) printf("P: %.2f\n", p);  
 
   clock_t init = clock();
   double init_o = omp_get_wtime();
