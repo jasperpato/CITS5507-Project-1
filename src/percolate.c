@@ -133,7 +133,7 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
       DFS(a, b, n, n_threads, st, tid);
     }   
   }
-  free_stack(st);
+  // free_stack(st);
 }
 
 /**
@@ -169,28 +169,10 @@ static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
         if(ix == nb->r*n+nb->c) continue; // don't overwrite neighbour until last
         a[ix].cluster = sc;
       }
-      // now overwrite neighbour
-      nb->cluster = sc; 
+      nc->id = -1; // mark as obsolete
+      nb->cluster = sc; // now overwrite neighbour
     }
   }
-}
-
-/**
- * @brief loop through each site and scan cluster data
- */
-static void scan_site_array(Site* a, int n, short *perc, int *max) {
-  short p = 0;
-  int m = 0;
-  // #pragma omp parallel for reduction(max: m)
-  for(int i = 0; i < n*n; ++i) {
-    Cluster *cl = a[i].cluster;
-    if(!cl) continue;
-    if(cl->size > m) m = cl->size;
-    if(p) continue;
-    if(cl->width == n || cl->height == n) p = 1;
-  }
-  *perc = p;
-  *max = m;
 }
 
 /**
@@ -258,7 +240,7 @@ int main(int argc, char *argv[])
       print_bond(b, n);
     }
   }
-  if(n < 2 || n_threads < 1) {
+  if(n < 1 || n_threads < 1) {
     printf("Invalid arguments.");
     return 0;
   }
@@ -266,10 +248,10 @@ int main(int argc, char *argv[])
 
   printf("\n%s %d-Thread\n\nN: %d\n", site ? "Site" : "Bond", n_threads, n);
   if(p != -1.0) printf("P: %.2f\n", p);
-  // each thread keeps an array of its cluster pointers 
 
-  CPArray* cpa = cluster_array(n_threads, max_clusters);
+  CPArray* cpa = cluster_array(n_threads, max_clusters); // each thread keeps an array of its cluster pointers 
   omp_set_num_threads(n_threads);
+
   clock_t init = clock();
   double init_o = omp_get_wtime();
   printf("\n Init time: %9.6f %9.6f\n", (double)(init-start)/CLOCKS_PER_SEC, init_o-start_o);
@@ -288,12 +270,11 @@ int main(int argc, char *argv[])
   double join_o = omp_get_wtime();
   printf(" Join time: %9.6f %9.6f\n", (double)(join-perc_t)/CLOCKS_PER_SEC, join_o-perc_o);
   
-  free(a);
-  if(b) free_bond(b);
+  // free(a);
+  // if(b) free_bond(b);
 
   short perc = 0;
   int max = 0;
-  // scan_site_array(a, n, &perc, &max);
   scan_clusters(cpa, n, n_threads, &perc, &max);
   printf(" Scan time: %9.6f %9.6f\n", (double)(clock()-join)/CLOCKS_PER_SEC, omp_get_wtime()-join_o);
 

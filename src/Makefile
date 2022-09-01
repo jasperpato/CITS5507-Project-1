@@ -21,9 +21,6 @@ all: percolate
 percolate: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-util/params: util/params.c
-	$(CC) -o $@ $^
-
 .PHONY: clean
 
 clean:

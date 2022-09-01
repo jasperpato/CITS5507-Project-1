@@ -78,7 +78,7 @@ Bond* file_bond(char* filename, int n)
 
 void print_bond(Bond* b, int n)
 {
-  if(n > 40) return;
+  if(!b || n > 40 || n < 2) return;
   int s = (int)log10(n-1) + 1;
   printf("\n");
   for(int i = 0; i < s; ++i) printf(" ");

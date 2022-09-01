@@ -43,14 +43,15 @@ void scan_clusters(CPArray* cpa, int n, int n_threads, short *perc, int *max) {
   for(int i = 0; i < n_threads; ++i) {
     for(int j = 0; j < cpa[i].size; ++j) {
       Cluster *cl = cpa[i].cls[j];
+      if(cl->id == -1) continue;
       if(cl->size > m) m = cl->size;
       if(p) continue;
       if(cl->width == n || cl->height == n) p = 1;
-      free_cluster(cl);
+      // free_cluster(cl);
     }
   }
   *perc = p;
   *max = m;
-  free_cparray(cpa, n_threads);
+  // free_cparray(cpa, n_threads);
 }
 
