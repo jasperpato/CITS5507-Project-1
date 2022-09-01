@@ -141,11 +141,11 @@ static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
     if(i+1 == n_threads) end = n*n;
     for(int i = start; i < end; ++i) { // loop along row
       Site *s = &a[i];
-      if(!s->cluster) continue;
+      Cluster *sc = s->cluster;
+      if(!sc) continue;
       Site *nb = bottom_neighbour(a, b, n, s);
       if(!nb) continue;
       // else update s->cluster
-      Cluster *sc = s->cluster;
       Cluster *nc = nb->cluster;
       if(!nc) { // add single neighbour
         if(!sc->rows[nb->r]) sc->height++;
@@ -320,6 +320,6 @@ int main(int argc, char *argv[])
   printf(" Scan time: %9.6f %9.6f\n", (double)(clock()-join)/CLOCKS_PER_SEC, omp_get_wtime()-join_o);
 
   printf("Total time: %9.6f %9.6f\n", (double)(clock()-start)/CLOCKS_PER_SEC, omp_get_wtime()-start_o);
-  printf("\n Num: %d\n Max: %d\nPerc: %s\n\n", num, max, perc ? "True" : "False");
+  printf("\nNum clusters: %d\n    Max size: %d\n  Percolates: %s\n\n", num, max, perc ? "True" : "False");
   return 0;
 }
