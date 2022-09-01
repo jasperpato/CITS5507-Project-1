@@ -5,9 +5,11 @@
 #include <unistd.h>
 #include <omp.h>
 
+#include "../include/stack.h"
 #include "../include/site.h"
 #include "../include/bond.h"
 #include "../include/cluster.h"
+
 #include "../include/constant.h"
 
 /**
@@ -15,7 +17,7 @@
  *        Returns true even if neighbour is across the thread boundary (because they need to be joined later).
  * @return short boolean true iff has at least one neighbour
  */
-short has_neighbours(Site* a, Bond* b, Site* s)
+static short has_neighbours(Site* a, Bond* b, Site* s)
 {
   // indices of neighbours
   int is[] = {
@@ -42,7 +44,7 @@ short has_neighbours(Site* a, Bond* b, Site* s)
  * @brief get bottom neighbour to site s, intended for across the thread boundary.
  * @return site pointer to bottom neighbour if connected and separate cluster, else NULL
  */
-Site* bottom_neighbour(Site* a, Bond* b, Site* s)
+static Site* bottom_neighbour(Site* a, Bond* b, Site* s)
 {
   int i = ((s->r+N+1)%N)*N+s->c;
   Site *nb = &a[i];
@@ -56,7 +58,7 @@ Site* bottom_neighbour(Site* a, Bond* b, Site* s)
  * @return Site** array of size 4 of neighbour's site pointers. Pointer is either a valid address
  *         if there is a connection to that neighbour, otherwise NULL
  */
-Site** get_neighbours(Site* a, Bond* b, Site* s, short tid)
+static void get_neighbours(Site* a, Bond* b, Site* s, Site* nbs[], short tid)
 {
   // indices of neighbours
   int is[] = {
@@ -72,11 +74,8 @@ Site** get_neighbours(Site* a, Bond* b, Site* s, short tid)
     s->r*N+s->c,          // top
     ((s->r+N+1)%N)*N+s->c // bottom
   };
-  Site** nbs = calloc(4, sizeof(Site*));
-  if(!nbs) return NULL;
   for(int i = 0; i < 4; ++i) {
     Site* nb = &a[is[i]];
-    // either check site occupation or bond struct
     int start = tid*N*(N/N_THREADS);
     int end = (tid+1)*N*(N/N_THREADS);
     if(tid+1 == N_THREADS) end = NUM_SITES;
@@ -89,31 +88,29 @@ Site** get_neighbours(Site* a, Bond* b, Site* s, short tid)
       nbs[i] = nb;
     } else nbs[i] = NULL;
   }
-  return nbs;
 }
 
 /**
  * @brief loop through neighbours and update cluster
  */
-void DFS(Site* a, Bond* b, Site* s, short tid, short* err) {
-  Site** nbs = get_neighbours(a, b, s, tid);
-  if(!nbs) {
-    *err = 1;
-    return;
-  }
-  Cluster* cl = s->cluster;
-  for(int i = 0; i < 4; ++i) { // loop through connected, unseen neighbours
-    if(*err) return;
-    if(!nbs[i]) continue; 
-    Site* nb = nbs[i];
-    nb->cluster = cl;
-    if(!cl->rows[nb->r]) cl->height++;
-    if(!cl->cols[nb->c]) cl->width++;
-    cl->rows[nb->r] = 1;
-    cl->cols[nb->c] = 1;
-    cl->sites[cl->size] = nb->r*N+nb->c; // add index of neighbour to cluster's site index array
-    cl->size++;
-    DFS(a, b, nb, tid, err);
+static void DFS(Site* a, Bond* b, Stack* st, short tid) {
+  while(!is_empty(st)) {
+    Site *s = pop(st);
+    Site *nbs[4];
+    get_neighbours(a, b, s, nbs, tid);
+    Cluster* cl = s->cluster;
+    for(int i = 0; i < 4; ++i) { // loop through connected, unseen neighbours
+      if(!nbs[i]) continue; 
+      Site* nb = nbs[i];
+      nb->cluster = cl;
+      if(!cl->rows[nb->r]) cl->height++;
+      if(!cl->cols[nb->c]) cl->width++;
+      cl->rows[nb->r] = 1;
+      cl->cols[nb->c] = 1;
+      cl->sites[cl->size] = nb->r*N+nb->c; // add index of neighbour to cluster's site index array
+      cl->size++;
+      add(st, nb);
+    }
   }
 }
 
@@ -122,25 +119,20 @@ void DFS(Site* a, Bond* b, Site* s, short tid, short* err) {
  * @param a site array
  * @param b bond struct, either valid address if [-b] or NUll if [-s]
  */
-void percolate(Site* a, Bond* b, short tid)
+static void percolate(Site* a, Bond* b, CPArray* cpa, short tid)
 {
-  short err = 0;
   int start = tid*N*(N/N_THREADS);
   int end = (tid+1)*N*(N/N_THREADS);
   if(tid+1 == N_THREADS) end = NUM_SITES; // last block may be larger
+  Stack* st = stack();
   for(int i = start; i < end; ++i) {
-    if(!a[i].seen && ((!b && a[i].occupied) || (b && (has_neighbours(a, b, &a[i]))))) {
-      a[i].seen = 1;
-      a[i].cluster = cluster(i/N, i%N);
-      if(!a[i].cluster) {
-        printf("Memory error.\n");
-        return;
-      }
-      DFS(a, b, &a[i], tid, &err);
-      if(err) {
-        printf("Memory error.\n");
-        return;
-      }
+    Site *s = &a[i];
+    if(!s->seen && ((!b && s->occupied) || (b && (has_neighbours(a, b, s))))) {
+      s->seen = 1;
+      s->cluster = cluster(i/N, i%N);
+      cpa->cls[cpa->size++] = s->cluster; 
+      add(st, s);
+      DFS(a, b, st, tid);
     }   
   }
 }
@@ -148,7 +140,7 @@ void percolate(Site* a, Bond* b, short tid)
 /**
  * @brief merges clusters along the bottom border of row
  */
-void join_row(Site* a, Bond *b, int start, int end, int *err) {
+static void join_row(Site* a, Bond *b, int start, int end) {
   for(int i = start; i < end; ++i) { // loop along row
     Site *s = &a[i];
     Site *nb = bottom_neighbour(a, b, s);
@@ -181,23 +173,20 @@ void join_row(Site* a, Bond *b, int start, int end, int *err) {
 
 /**
  * @brief merges clusters along thread boundaries, and then calculates stats
- * WRONG RESULT WHEN JOINING ALTERNATING CLUSTERS ALONG BORDER
  */
-void join_clusters(Site* a, Bond* b) {
+static void join_clusters(Site* a, Bond* b) {
   for(int i = 0; i < N_THREADS; ++i) {
     int start = i*N*(N/N_THREADS);
     int end = (i+1)*N*(N/N_THREADS);
     if(i+1 == N_THREADS) end = NUM_SITES;
-    int err = 0;
-    join_row(a, b, start, end, &err);
-    if(err) {
-      printf("Memory error.\n");
-      return;
-    }
+    join_row(a, b, start, end);
   }
 }
 
-void scan_site_array(Site* a, short *perc, int *max) {
+/**
+ * @brief loop through each site and scan cluster data
+ */
+static void scan_site_array(Site* a, short *perc, int *max) {
   short p = 0;
   int m = 0;
   // #pragma omp parallel for reduction(max: m)
@@ -218,15 +207,12 @@ void scan_site_array(Site* a, short *perc, int *max) {
 int main(int argc, char *argv[])
 {
   clock_t start = clock();
-
+  double start_o = omp_get_wtime();
   Site* a = NULL;
   Bond* b = NULL;
-
   short site = 1;
   char* fname = NULL;
-
   float p = -1.0;
-
   int c;
   while ((c = getopt(argc, argv, "sbf:")) != -1) {
     if(c == 'b') site = 0;
@@ -241,17 +227,9 @@ int main(int argc, char *argv[])
   if(fname) {
     if(site) {
       a = file_site_array(fname);
-      if(!a) {
-        printf("Error reading file.\n");
-        return 0;
-      }
       print_site_array(a);
     } else {
       b = file_bond(fname);
-      if(!b) {
-        printf("Error reading file.\n");
-        return 0;
-      }
       a = site_array(-1.0);
       print_bond(b);
     }
@@ -275,39 +253,35 @@ int main(int argc, char *argv[])
   }
   printf("\n%s %d-Thread\n\nN: %d\n", site ? "Site" : "Bond", N_THREADS, N);
   if(p != -1.0) printf("P: %.2f\n", p);
-
   // each thread keeps an array of its cluster pointers 
-  // Cluster ***cls;
-  // if(N_THREADS > 1) {
-  //   cls = calloc(N_THREADS, sizeof(Cluster**));
-  //   for(int i = 0; i < N_THREADS; ++i) cls[i] = calloc(MAX_CLUSTERS, sizeof(Cluster*));
-  // }
 
+  CPArray* cpa = cluster_array();
   omp_set_num_threads(N_THREADS);
-  
   clock_t init = clock();
-  printf("\n Init time: %9.6f\n", (double)(init-start)/CLOCKS_PER_SEC);
+  double init_o = omp_get_wtime();
+  printf("\n Init time: %9.6f %9.6f\n", (double)(init-start)/CLOCKS_PER_SEC, init_o-start_o);
 
   #pragma omp parallel
   {
     int num = omp_get_thread_num();
-    percolate(a, b, num);
+    percolate(a, b, &cpa[num], num);
   }
-
   clock_t perc_t = clock();
-  printf(" Perc time: %9.6f %9.6f\n", (double)(perc_t-init)/CLOCKS_PER_SEC, (double)(perc_t-start)/CLOCKS_PER_SEC);
+  double perc_o = omp_get_wtime();
+  printf(" Perc time: %9.6f %9.6f\n", (double)(perc_t-init)/CLOCKS_PER_SEC, perc_o-init_o);
 
   if(N_THREADS > 1) join_clusters(a, b);
   clock_t join = clock();
-  printf(" Join time: %9.6f %9.6f\n", (double)(join-perc_t)/CLOCKS_PER_SEC, (double)(join-start)/CLOCKS_PER_SEC);
+  double join_o = omp_get_wtime();
+  printf(" Join time: %9.6f %9.6f\n", (double)(join-perc_t)/CLOCKS_PER_SEC, join_o-perc_o);
   
   short perc = 0;
   int max = 0;
-  scan_site_array(a, &perc, &max);
-  printf(" Scan time: %9.6f %9.6f\n", (double)(clock()-join)/CLOCKS_PER_SEC, (double)(clock()-start)/CLOCKS_PER_SEC);
+  // scan_site_array(a, &perc, &max);
+  scan_clusters(cpa, &perc, &max);
+  printf(" Scan time: %9.6f %9.6f\n", (double)(clock()-join)/CLOCKS_PER_SEC, omp_get_wtime()-join_o);
 
-  printf("Total time: %9.6f\n", (double)(clock()-start)/CLOCKS_PER_SEC);
-
+  printf("Total time: %9.6f %9.6f\n", (double)(clock()-start)/CLOCKS_PER_SEC, omp_get_wtime()-start_o);
   printf("\nPerc: %s\n Max: %d\n\n", perc ? "True" : "False", max);
   return 0;
 }

@@ -1,16 +1,16 @@
 IDIR = ../include
 CC = gcc
-CFLAGS = -I$(IDIR) -std=c11 -Wall -Werror -fopenmp -lm
+CFLAGS = -I$(IDIR) -std=c11 -Wall -Werror -fopenmp -Wno-unused-function
 
 ODIR = obj
 LDIR = ../lib
 
 LIBS = 
 
-_DEPS = constant.h bond.h cluster.h site.h
+_DEPS = constant.h bond.h cluster.h site.h stack.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = bond.o percolate.o cluster.o site.o
+_OBJ = bond.o cluster.o percolate.o site.o stack.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: %.c $(DEPS)

@@ -11,6 +11,13 @@ typedef struct Cluster {
   int* sites;
 } Cluster;
 
+typedef struct CPArray {
+  Cluster** cls;
+  int size;
+} CPArray;
+
 Cluster* cluster(int, int);
+CPArray* cluster_array();
+void scan_clusters(CPArray*, short*, int*);
 
 #endif

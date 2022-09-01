@@ -29,7 +29,6 @@ Site* site_array(float p)
 Site* file_site_array(char* filename) {
   Site* s = calloc(NUM_SITES, sizeof(Site));
   if(!s) return NULL;
-
   int ch, r = 0, c = 0;
   FILE* f = fopen(filename, "r");
   if(!f) return NULL;

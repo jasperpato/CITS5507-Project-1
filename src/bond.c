@@ -37,7 +37,6 @@ Bond* file_bond(char* filename)
   b->v = calloc(NUM_SITES, sizeof(short));
   b->h = calloc(NUM_SITES, sizeof(short));
   if(!b->v || !b->h) return NULL;
-
   int ch, r = 0, c = 0, v_count = 0;
   short gap = 1, vert = 1;
   FILE* f = fopen(filename, "r");
