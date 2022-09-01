@@ -36,14 +36,15 @@ void free_cparray(CPArray* cpa, int n_threads) {
   free(cpa);
 }
 
-void scan_clusters(CPArray* cpa, int n, int n_threads, short *perc, int *max) {
+void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max, short *perc) {
   short p = 0;
-  int m = 0;
+  int nm = 0, m = 0;
   // #pragma omp parallel for reduction(max: m)
   for(int i = 0; i < n_threads; ++i) {
     for(int j = 0; j < cpa[i].size; ++j) {
       Cluster *cl = cpa[i].cls[j];
       if(cl->id == -1) continue;
+      nm++;
       if(cl->size > m) m = cl->size;
       if(p) continue;
       if(cl->width == n || cl->height == n) p = 1;
@@ -51,6 +52,7 @@ void scan_clusters(CPArray* cpa, int n, int n_threads, short *perc, int *max) {
     }
   }
   *perc = p;
+  *num = nm;
   *max = m;
   // free_cparray(cpa, n_threads);
 }

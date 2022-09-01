@@ -213,10 +213,22 @@ int main(int argc, char *argv[])
     if(argc - optind > 0) n_threads = atoi(argv[optind]);
     if(site) {
       a = file_site_array(fname, n);
+      if(!a) {
+        printf("Memory error.\n");
+        return 0;
+      }
       print_site_array(a, n);
     } else {
       b = file_bond(fname, n);
+      if(!b) {
+        printf("Memory error.\n");
+        return 0;
+      }
       a = site_array(n, -1.0);
+      if(!a) {
+        printf("Memory error.\n");
+        return 0;
+      }
       print_bond(b, n);
     }
   }
@@ -276,12 +288,12 @@ int main(int argc, char *argv[])
   // free(a);
   // if(b) free_bond(b);
 
+  int num = 0, max = 0;
   short perc = 0;
-  int max = 0;
-  scan_clusters(cpa, n, n_threads, &perc, &max);
+  scan_clusters(cpa, n, n_threads, &num, &max, &perc);
   printf(" Scan time: %9.6f %9.6f\n", (double)(clock()-join)/CLOCKS_PER_SEC, omp_get_wtime()-join_o);
 
   printf("Total time: %9.6f %9.6f\n", (double)(clock()-start)/CLOCKS_PER_SEC, omp_get_wtime()-start_o);
-  printf("\nPerc: %s\n Max: %d\n\n", perc ? "True" : "False", max);
+  printf("\n Num: %d\n Max: %d\nPerc: %s\n\n", num, max, perc ? "True" : "False");
   return 0;
 }

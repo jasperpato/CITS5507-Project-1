@@ -19,6 +19,6 @@ Cluster* cluster(int, int, int);
 CPArray* cluster_array(int, int);
 void free_cluster(Cluster*);
 void free_cparray(CPArray*, int);
-void scan_clusters(CPArray*, int, int, short*, int*);
+void scan_clusters(CPArray*, int, int, int*, int*, short*);
 
 #endif
