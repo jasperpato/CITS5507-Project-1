@@ -24,6 +24,18 @@ CPArray* cluster_array() {
   return cpa;
 }
 
+void free_cluster(Cluster *cl) {
+  free(cl->rows);
+  free(cl->cols);
+  free(cl->sites);
+  free(cl);
+}
+
+void free_cparray(CPArray* cpa) {
+  for(int i = 0; i < N_THREADS; ++i) free(cpa[i].cls);
+  free(cpa);
+}
+
 void scan_clusters(CPArray* cpa, short *perc, int *max) {
   short p = 0;
   int m = 0;
@@ -34,8 +46,11 @@ void scan_clusters(CPArray* cpa, short *perc, int *max) {
       if(cl->size > m) m = cl->size;
       if(p) continue;
       if(cl->width == N || cl->height == N) p = 1;
+      free_cluster(cl);
     }
   }
   *perc = p;
   *max = m;
+  free_cparray(cpa);
 }
+

@@ -2,6 +2,7 @@
 #define CLUSTER_H
 
 #include <stdlib.h>
+// #include <omp.h>
 
 #include "./constant.h"
 
@@ -18,6 +19,8 @@ typedef struct CPArray {
 
 Cluster* cluster(int, int);
 CPArray* cluster_array();
+void free_cluster(Cluster*);
+void free_cparray(CPArray*);
 void scan_clusters(CPArray*, short*, int*);
 
 #endif

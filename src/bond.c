@@ -100,3 +100,9 @@ void print_bond(Bond* b)
     printf("\n");
   }
 }
+
+void free_bond(Bond* b) {
+  free(b->v);
+  free(b->h);
+  free(b);
+}

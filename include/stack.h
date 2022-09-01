@@ -13,5 +13,6 @@ Stack* stack();
 short is_empty(Stack*);
 void add(Stack*, Site*);
 Site* pop(Stack*);
+void free_stack(Stack*);
 
 #endif

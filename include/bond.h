@@ -15,5 +15,6 @@ typedef struct Bond {
 Bond* bond(float);
 Bond* file_bond(char*);
 void print_bond(Bond*);
+void free_bond(Bond*);
 
 #endif

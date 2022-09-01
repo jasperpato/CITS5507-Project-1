@@ -135,51 +135,46 @@ static void percolate(Site* a, Bond* b, CPArray* cpa, short tid)
       DFS(a, b, st, tid);
     }   
   }
+  free_stack(st);
 }
 
 /**
  * @brief merges clusters along the bottom border of row
- */
-static void join_row(Site* a, Bond *b, int start, int end) {
-  for(int i = start; i < end; ++i) { // loop along row
-    Site *s = &a[i];
-    Site *nb = bottom_neighbour(a, b, s);
-    if(!nb) continue;
-    // else update s->cluster
-    Cluster *sc = s->cluster;
-    Cluster *nc = nb->cluster;
-    int sc_size = sc->size; // , nc_size = nc->size;
-    sc->size += nc->size;
-    for(int i = 0; i < N; ++i) {
-      if(nc->rows[i]) {
-        if(!sc->rows[i]) sc->height++;
-        sc->rows[i] = 1;
-      }
-      if(nc->cols[i]) {
-        if(!sc->cols[i]) sc->width++;
-        sc->cols[i] = 1;
-      }
-    }
-    for(int j = 0; j < nc->size; ++j) {
-      int ix = nc->sites[j];
-      sc->sites[j+sc_size] = ix;
-      if(ix == nb->r*N+nb->c) continue; // don't overwrite neighbour until last
-      a[ix].cluster = sc;
-    }
-    // now overwrite neighbour
-    nb->cluster = sc; 
-  }
-}
-
-/**
- * @brief merges clusters along thread boundaries, and then calculates stats
  */
 static void join_clusters(Site* a, Bond* b) {
   for(int i = 0; i < N_THREADS; ++i) {
     int start = i*N*(N/N_THREADS);
     int end = (i+1)*N*(N/N_THREADS);
     if(i+1 == N_THREADS) end = NUM_SITES;
-    join_row(a, b, start, end);
+    for(int i = start; i < end; ++i) { // loop along row
+      Site *s = &a[i];
+      Site *nb = bottom_neighbour(a, b, s);
+      if(!nb) continue;
+      // else update s->cluster
+      Cluster *sc = s->cluster;
+      Cluster *nc = nb->cluster;
+      int sc_size = sc->size; // , nc_size = nc->size;
+      sc->size += nc->size;
+      for(int i = 0; i < N; ++i) {
+        if(nc->rows[i]) {
+          if(!sc->rows[i]) sc->height++;
+          sc->rows[i] = 1;
+        }
+        if(nc->cols[i]) {
+          if(!sc->cols[i]) sc->width++;
+          sc->cols[i] = 1;
+        }
+      }
+      for(int j = 0; j < nc->size; ++j) {
+        int ix = nc->sites[j];
+        sc->sites[j+sc_size] = ix;
+        if(ix == nb->r*N+nb->c) continue; // don't overwrite neighbour until last
+        a[ix].cluster = sc;
+      }
+      // now overwrite neighbour
+      free_cluster(nb->cluster);
+      nb->cluster = sc; 
+    }
   }
 }
 
@@ -275,6 +270,9 @@ int main(int argc, char *argv[])
   double join_o = omp_get_wtime();
   printf(" Join time: %9.6f %9.6f\n", (double)(join-perc_t)/CLOCKS_PER_SEC, join_o-perc_o);
   
+  free(a);
+  if(b) free_bond(b);
+
   short perc = 0;
   int max = 0;
   // scan_site_array(a, &perc, &max);

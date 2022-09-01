@@ -20,3 +20,8 @@ void add(Stack* st, Site* s) {
 Site* pop(Stack* st) {
   return st->stack[st->first++];
 }
+
+void free_stack(Stack* st) {
+  free(st->stack);
+  free(st);
+}

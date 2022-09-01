@@ -69,3 +69,4 @@ void print_site_array(Site* a)
     printf("\n");
   }
 }
+
