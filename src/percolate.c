@@ -33,7 +33,7 @@ static short has_neighbours(Site* a, Bond* b, int n, Site* s)
   };
   for(int i = 0; i < 4; ++i) {
     Site* nb = &a[is[i]];
-    if(!nb->seen && ((i<2 && b->h[ib[i]]) || (i>=2 && b->v[ib[i]]))) return 1;
+    if(!nb->seen && ((i<2 && b->h[ib[i]]) || (i>=2 && b->v[ib[i]]))) return 1; 
   }
   return 0;
 }
@@ -47,7 +47,7 @@ static Site* bottom_neighbour(Site* a, Bond* b, int n, Site* s)
   int i = ((s->r+n+1)%n)*n+s->c;
   Site *nb = &a[i];
   if((!b && !nb->occupied) || (b && !b->v[i])) return NULL;
-  if(!nb->cluster || !s->cluster) return NULL;
+  if(!nb->cluster) return nb;
   if(s->cluster->id == nb->cluster->id) return NULL;
   return nb;
 }
@@ -125,7 +125,7 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
   Stack* st = stack(n);
   for(int i = start; i < end; ++i) {
     Site *s = &a[i];
-    if(!s->seen && ((!b && s->occupied) || (b && (has_neighbours(a, b, n, s))))) {
+    if(!s->seen && ((!b && s->occupied) || (b && has_neighbours(a, b, n, s)))) {
       s->seen = 1;
       s->cluster = cluster(n, i/n, i%n);
       cpa->cls[cpa->size++] = s->cluster; 
@@ -151,25 +151,34 @@ static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
       // else update s->cluster
       Cluster *sc = s->cluster;
       Cluster *nc = nb->cluster;
-      int sc_size = sc->size; // , nc_size = nc->size;
-      sc->size += nc->size;
-      for(int i = 0; i < n; ++i) {
-        if(nc->rows[i]) {
-          if(!sc->rows[i]) sc->height++;
-          sc->rows[i] = 1;
-        }
-        if(nc->cols[i]) {
-          if(!sc->cols[i]) sc->width++;
-          sc->cols[i] = 1;
-        }
+      if(!nc) { // add single neighbour
+        if(!sc->rows[nb->r]) sc->height++;
+        sc->rows[nb->r] = 1;
+        if(!sc->cols[nb->c]) sc->width++;
+        sc->cols[nb->c] = 1;
+        sc->sites[sc->size++] = nb->r*n+nb->c;
       }
-      for(int j = 0; j < nc->size; ++j) {
-        int ix = nc->sites[j];
-        sc->sites[j+sc_size] = ix;
-        if(ix == nb->r*n+nb->c) continue; // don't overwrite neighbour until last
-        a[ix].cluster = sc;
+      else { // combine two clusters
+        int sc_size = sc->size;
+        sc->size += nc->size;
+        for(int i = 0; i < n; ++i) {
+          if(nc->rows[i]) {
+            if(!sc->rows[i]) sc->height++;
+            sc->rows[i] = 1;
+          }
+          if(nc->cols[i]) {
+            if(!sc->cols[i]) sc->width++;
+            sc->cols[i] = 1;
+          }
+        }
+        for(int j = 0; j < nc->size; ++j) {
+          int ix = nc->sites[j];
+          sc->sites[j+sc_size] = ix;
+          if(ix == nb->r*n+nb->c) continue; // don't overwrite neighbour until last
+          a[ix].cluster = sc;
+        }
+        nc->id = -1; // mark as obsolete
       }
-      nc->id = -1; // mark as obsolete
       nb->cluster = sc; // now overwrite neighbour
     }
   }
