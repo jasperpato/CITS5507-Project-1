@@ -15,15 +15,8 @@
  *        Returns true even if neighbour is across the thread boundary (because they need to be joined later).
  * @return short boolean true iff has at least one neighbour
  */
-static short has_neighbours(Site* a, Bond* b, int n, Site* s)
+static short has_neighbours(Bond* b, int n, Site* s)
 {
-  // indices of neighbours
-  int is[] = {
-    s->r*n+(s->c+n-1)%n,   // left
-    s->r*n+(s->c+n+1)%n,   // right
-    ((s->r+n-1)%n)*n+s->c, // top
-    ((s->r+n+1)%n)*n+s->c  // bottom
-  };
   // indices of bonds
   int ib[] = {
     s->r*n+s->c,          // left
@@ -32,8 +25,7 @@ static short has_neighbours(Site* a, Bond* b, int n, Site* s)
     ((s->r+n+1)%n)*n+s->c // bottom
   };
   for(int i = 0; i < 4; ++i) {
-    Site* nb = &a[is[i]];
-    if(!nb->seen && ((i<2 && b->h[ib[i]]) || (i>=2 && b->v[ib[i]]))) return 1; 
+    if((i<2 && b->h[ib[i]]) || (i>=2 && b->v[ib[i]])) return 1; 
   }
   return 0;
 }
@@ -47,7 +39,10 @@ static Site* bottom_neighbour(Site* a, Bond* b, int n, Site* s)
   int i = ((s->r+n+1)%n)*n+s->c;
   Site *nb = &a[i];
   if((!b && !nb->occupied) || (b && !b->v[i])) return NULL;
-  if(!nb->cluster) return nb;
+  if(!s->cluster || !nb->cluster) {
+    printf("Never.\n");
+    return NULL;
+  }
   if(s->cluster->id == nb->cluster->id) return NULL;
   return nb;
 }
@@ -125,7 +120,7 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
   Stack* st = stack(n);
   for(int i = start; i < end; ++i) {
     Site *s = &a[i];
-    if(!s->seen && ((!b && s->occupied) || (b && has_neighbours(a, b, n, s)))) {
+    if(!s->seen && ((!b && s->occupied) || (b && has_neighbours(b, n, s)))) {
       s->seen = 1;
       s->cluster = cluster(n, i/n, i%n);
       cpa->cls[cpa->size++] = s->cluster; 
@@ -146,6 +141,7 @@ static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
     if(i+1 == n_threads) end = n*n;
     for(int i = start; i < end; ++i) { // loop along row
       Site *s = &a[i];
+      if(!s->cluster) continue;
       Site *nb = bottom_neighbour(a, b, n, s);
       if(!nb) continue;
       // else update s->cluster
@@ -182,6 +178,27 @@ static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
       nb->cluster = sc; // now overwrite neighbour
     }
   }
+}
+
+static void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max, short *perc) {
+  short p = 0;
+  int nm = 0, m = 0;
+  // #pragma omp parallel for reduction(max: m)
+  for(int i = 0; i < n_threads; ++i) {
+    for(int j = 0; j < cpa[i].size; ++j) {
+      Cluster *cl = cpa[i].cls[j];
+      if(cl->id == -1) continue;
+      nm++;
+      if(cl->size > m) m = cl->size;
+      if(p) continue;
+      if(cl->width == n || cl->height == n) p = 1;
+      // free_cluster(cl);
+    }
+  }
+  *perc = p;
+  *num = nm;
+  *max = m;
+  // free_cparray(cpa, n_threads);
 }
 
 /**
