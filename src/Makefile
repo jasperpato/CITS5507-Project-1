@@ -7,7 +7,7 @@ LDIR = ../lib
 
 LIBS = 
 
-_DEPS = constant.h bond.h cluster.h site.h stack.h
+_DEPS = bond.h cluster.h site.h stack.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = bond.o cluster.o percolate.o site.o stack.o

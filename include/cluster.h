@@ -4,8 +4,6 @@
 #include <stdlib.h>
 // #include <omp.h>
 
-#include "./constant.h"
-
 typedef struct Cluster {
   short *rows, *cols;
   int id, size, height, width; // id is initial site s index: s.r*n+s.c
@@ -17,10 +15,10 @@ typedef struct CPArray {
   int size;
 } CPArray;
 
-Cluster* cluster(int, int);
-CPArray* cluster_array();
+Cluster* cluster(int, int, int);
+CPArray* cluster_array(int, int);
 void free_cluster(Cluster*);
-void free_cparray(CPArray*);
-void scan_clusters(CPArray*, short*, int*);
+void free_cparray(CPArray*, int);
+void scan_clusters(CPArray*, int, int, short*, int*);
 
 #endif

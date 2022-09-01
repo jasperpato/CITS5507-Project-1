@@ -7,19 +7,19 @@
  * 
  * NOTE: this could be parallelised
  */
-Bond* bond(float p)
+Bond* bond(int n, float p)
 {
   Bond* b = calloc(1, sizeof(Bond));
   if(!b) return NULL;
-  b->v = calloc(NUM_SITES, sizeof(short));
-  b->h = calloc(NUM_SITES, sizeof(short));
+  b->v = calloc(n*n, sizeof(short));
+  b->h = calloc(n*n, sizeof(short));
   if(!b->v || !b->h) return NULL;
-  for(int r = 0; r < N; ++r) {
-    for(int c = 0; c < N; ++c) {
-      if((double)rand()/(double)RAND_MAX < p) b->v[r*N+c] = 1;
-      else b->v[r*N+c] = 0; 
-      if((double)rand()/(double)RAND_MAX < p) b->h[r*N+c] = 1;
-      else b->h[r*N+c] = 0;
+  for(int r = 0; r < n; ++r) {
+    for(int c = 0; c < n; ++c) {
+      if((double)rand()/(double)RAND_MAX < p) b->v[r*n+c] = 1;
+      else b->v[r*n+c] = 0; 
+      if((double)rand()/(double)RAND_MAX < p) b->h[r*n+c] = 1;
+      else b->h[r*n+c] = 0;
       }
   }
   return b;
@@ -27,24 +27,24 @@ Bond* bond(float p)
 
 /**
  * @param filename 
- * @brief assume lattice size N
+ * @brief assume lattice size n
  * @return pointer to a bond struct scanned from a file
  */
-Bond* file_bond(char* filename)
+Bond* file_bond(char* filename, int n)
 {
   Bond* b = calloc(1, sizeof(Bond));
   if(!b) return NULL;
-  b->v = calloc(NUM_SITES, sizeof(short));
-  b->h = calloc(NUM_SITES, sizeof(short));
+  b->v = calloc(n*n, sizeof(short));
+  b->h = calloc(n*n, sizeof(short));
   if(!b->v || !b->h) return NULL;
   int ch, r = 0, c = 0, v_count = 0;
   short gap = 1, vert = 1;
   FILE* f = fopen(filename, "r");
   if(!f) return NULL;
   while((ch = getc(f)) != EOF) {
-    if(v_count == N) break; // can have text underneath
+    if(v_count == n) break; // can have text underneath
     if(vert) {
-      if(ch != '\n' && c == N) continue; // skip characters at end of line
+      if(ch != '\n' && c == n) continue; // skip characters at end of line
       if(ch == ' ') {
         if(gap) gap = 0;
         else {
@@ -55,12 +55,12 @@ Bond* file_bond(char* filename)
       } else if(ch == '\n') {
         vert = 0; c = 0; gap = 0;
       } else if(ch == '|') {
-        b->v[r*N+c] = 1;
+        b->v[r*n+c] = 1;
         gap = 1;
         ++c;
       }
     } else { // in a horizontal line
-      if(ch != '\n' && c == N) continue; // skip characters at end of line
+      if(ch != '\n' && c == n) continue; // skip characters at end of line
       if(ch == '\n') {
         vert = 1; gap = 1;
         c = 0;
@@ -68,7 +68,7 @@ Bond* file_bond(char* filename)
       } else if(ch == 'O') {
         gap = 0;
       } else {
-        b->h[r*N+c] = (ch == '-') ? 1 : 0;
+        b->h[r*n+c] = (ch == '-') ? 1 : 0;
         ++c;
       }
     }
@@ -76,25 +76,25 @@ Bond* file_bond(char* filename)
   return b;
 }
 
-void print_bond(Bond* b)
+void print_bond(Bond* b, int n)
 {
-  if(N > 40) return;
-  int s = (int)log10(N-1) + 1;
+  if(n > 40) return;
+  int s = (int)log10(n-1) + 1;
   printf("\n");
   for(int i = 0; i < s; ++i) printf(" ");
   printf(" ");
-  for(int c = 0; c < N; ++c) printf("\033[0;34m %*d\033[0;30m", s, c);
+  for(int c = 0; c < n; ++c) printf("\033[0;34m %*d\033[0;30m", s, c);
   printf("\n\n");
-  for(int r = 0; r < N; ++r) {
+  for(int r = 0; r < n; ++r) {
     printf(" ");
     for(int i = 0; i < s; ++i) printf(" ");
-    for(int c = 0; c < N; ++c) {
+    for(int c = 0; c < n; ++c) {
       for(int i = 0; i < s; ++i) printf(" ");
-      printf(b->v[r*N+c] ? "\033[0;31m|\033[0;30m" : " ");
+      printf(b->v[r*n+c] ? "\033[0;31m|\033[0;30m" : " ");
     }
     printf("\033[0;34m\n%*d \033[0;30m", s, r);
-    for(int c = 0; c < N; ++c) {
-      for(int i = 0; i < s; ++i) printf(b->h[r*N+c] ? "\033[0;31m-\033[0;30m" : " ");
+    for(int c = 0; c < n; ++c) {
+      for(int i = 0; i < s; ++i) printf(b->h[r*n+c] ? "\033[0;31m-\033[0;30m" : " ");
       printf("O");
     }
     printf("\n");

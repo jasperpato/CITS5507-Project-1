@@ -1,7 +1,6 @@
 #ifndef STACK_H
 #define STACK_H 
 
-#include "./constant.h"
 #include "./site.h"
 
 typedef struct Stack {
@@ -9,7 +8,7 @@ typedef struct Stack {
   int first, last;
 } Stack;
 
-Stack* stack();
+Stack* stack(int);
 short is_empty(Stack*);
 void add(Stack*, Site*);
 Site* pop(Stack*);

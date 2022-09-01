@@ -6,15 +6,14 @@
 #include <math.h>
 
 #include "./site.h"
-#include "./constant.h"
 
 typedef struct Bond {
   short *v, *h;
 } Bond;
 
-Bond* bond(float);
-Bond* file_bond(char*);
-void print_bond(Bond*);
+Bond* bond(int, float);
+Bond* file_bond(char*, int);
+void print_bond(Bond*, int);
 void free_bond(Bond*);
 
 #endif

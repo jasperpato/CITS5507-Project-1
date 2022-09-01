@@ -6,7 +6,6 @@
 #include <math.h>
 
 #include "./cluster.h"
-#include "./constant.h"
 
 typedef struct Site {
   int r, c;
@@ -14,8 +13,8 @@ typedef struct Site {
   Cluster *cluster;
 } Site;
 
-Site* site_array(float);
-Site* file_site_array(char*);
-void print_site_array(Site*);
+Site* site_array(int, float);
+Site* file_site_array(char*, int);
+void print_site_array(Site*, int);
 
 #endif
