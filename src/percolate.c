@@ -172,7 +172,6 @@ static void join_clusters(Site* a, Bond* b) {
         a[ix].cluster = sc;
       }
       // now overwrite neighbour
-      free_cluster(nb->cluster);
       nb->cluster = sc; 
     }
   }
