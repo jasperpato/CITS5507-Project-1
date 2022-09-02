@@ -175,8 +175,8 @@ static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
   }
 }
 
-static void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max, short *perc) {
-  short p = 0;
+static void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max, short *rperc, short *cperc) {
+  short rp = 0, cp = 0;
   int nm = 0, m = 0;
   for(int i = 0; i < n_threads; ++i) {
     for(int j = 0; j < cpa[i].size; ++j) {
@@ -184,12 +184,13 @@ static void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max
       if(cl->id == -1) continue;
       nm++;
       if(cl->size > m) m = cl->size;
-      if(p) continue;
-      if(cl->width == n || cl->height == n) p = 1;
+      if(cl->height == n) rp = 1;
+      if(cl->width == n) cp = 1;
       // free_cluster(cl);
     }
   }
-  *perc = p;
+  *rperc = rp;
+  *cperc = cp;
   *num = nm;
   *max = m;
   // free_cparray(cpa, n_threads);
@@ -200,8 +201,7 @@ static void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max
  */
 int main(int argc, char *argv[])
 {
-  clock_t start = clock();
-  double start_o = omp_get_wtime();
+  double start = omp_get_wtime();
   
   Site* a = NULL;
   Bond* b = NULL;
@@ -287,33 +287,30 @@ int main(int argc, char *argv[])
   printf("\n%s %d-Thread\n\nN: %d\n", site ? "Site" : "Bond", n_threads, n);
   if(p != -1.0) printf("P: %.2f\n", p);  
 
-  clock_t init = clock();
-  double init_o = omp_get_wtime();
-  printf("\n Init time: %9.6f %9.6f\n", (double)(init-start)/CLOCKS_PER_SEC, init_o-start_o);
+  double init = omp_get_wtime();
+  printf("\n Init time: %9.6f\n", init-start);
 
   #pragma omp parallel
   {
     int num = omp_get_thread_num();
     percolate(a, b, n, n_threads, &cpa[num], num);
   }
-  clock_t perc_t = clock();
-  double perc_o = omp_get_wtime();
-  printf(" Perc time: %9.6f %9.6f\n", (double)(perc_t-init)/CLOCKS_PER_SEC, perc_o-init_o);
+  double pt = omp_get_wtime();
+  printf(" Perc time: %9.6f\n", pt-init);
 
   if(n_threads > 1) join_clusters(a, b, n, n_threads);
-  clock_t join = clock();
-  double join_o = omp_get_wtime();
-  printf(" Join time: %9.6f %9.6f\n", (double)(join-perc_t)/CLOCKS_PER_SEC, join_o-perc_o);
+  double join = omp_get_wtime();
+  printf(" Join time: %9.6f\n", join-pt);
   
   // free(a);
   // if(b) free_bond(b);
 
   int num = 0, max = 0;
-  short perc = 0;
-  scan_clusters(cpa, n, n_threads, &num, &max, &perc);
-  printf(" Scan time: %9.6f %9.6f\n", (double)(clock()-join)/CLOCKS_PER_SEC, omp_get_wtime()-join_o);
+  short rperc = 0, cperc = 0;
+  scan_clusters(cpa, n, n_threads, &num, &max, &rperc, &cperc);
+  printf(" Scan time: %9.6f\n", omp_get_wtime()-join);
 
-  printf("Total time: %9.6f %9.6f\n", (double)(clock()-start)/CLOCKS_PER_SEC, omp_get_wtime()-start_o);
-  printf("\nNum clusters: %d\n    Max size: %d\n  Percolates: %s\n\n", num, max, perc ? "True" : "False");
+  printf("Total time: %9.6f\n", omp_get_wtime()-start);
+  printf("\n   Num clusters: %d\n       Max size: %d\nRow percolation: %s\nCol percolation: %s\n\n", num, max, rperc ? "True" : "False", cperc ? "True" : "False");
   return 0;
 }
