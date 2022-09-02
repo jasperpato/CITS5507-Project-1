@@ -1,10 +1,10 @@
 
 #include "../include/stack.h"
 
-Stack* stack(int n) {
+Stack* stack(int size) {
   Stack* st = calloc(1, sizeof(Stack));
   if(!st) return NULL;
-  st->stack = calloc(n*n, sizeof(Site*));
+  st->stack = calloc(size, sizeof(Site*));
   if(!st->stack) return NULL;
   return st;
 }
