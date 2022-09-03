@@ -47,10 +47,32 @@ void print_results(float **results, int size) {
   }
 }
 
+float* get_avgs(float **results, int size, int n, float p, int n_threads) {
+  float *avgs = calloc(NUM_DATA_POINTS-3, sizeof(float));
+  int num = 0;
+  for(int i = 0; i < size; ++i) {
+    if(results[i][0] == n && results[i][1] == p && results[i][2] == n_threads) {
+      for(int j = 0; j < NUM_DATA_POINTS-3; ++j) avgs[j] += results[i][j+3];
+      ++num;
+    }
+  }
+  for(int i = 0; i < NUM_DATA_POINTS-3; ++i) avgs[i] /= num;
+  return avgs;
+}
+
 int main(int argc, char *argv[]) {
+  if(argc < 5) exit(EXIT_FAILURE);
+  
   int size;
-  float **results = read_file("../results.txt", &size);
-  printf("Size %d\n", size);
-  print_results(results, size);
+  float **results = read_file(argv[1], &size);
+  
+  int n = atoi(argv[2]);
+  float p = atof(argv[3]);
+  int n_threads = atoi(argv[4]);
+
+  float *avgs = get_avgs(results, size, n, p, n_threads);
+  for(int i = 0; i < NUM_DATA_POINTS-3; ++i) printf("%f ", avgs[i]);
+  printf("\n");
+
   exit(EXIT_SUCCESS);
 }

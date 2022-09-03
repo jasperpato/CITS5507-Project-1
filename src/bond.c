@@ -9,6 +9,7 @@
  */
 Bond* bond(int n, float p)
 {
+  srand(time(NULL));
   Bond* b = calloc(1, sizeof(Bond));
   if(!b) return NULL;
   b->v = calloc(n*n, sizeof(short));

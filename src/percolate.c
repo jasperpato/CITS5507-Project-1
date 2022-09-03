@@ -202,23 +202,29 @@ int main(int argc, char *argv[])
   Bond* b = NULL;
   
   short site = 1, verbose = 1, file = 0;
-  char* fname = NULL;
+  char* fname = NULL, *rname = NULL;
 
   int n;
   float p = -1.0;
   int n_threads = 1;
   
   int c;
-  while ((c = getopt(argc, argv, "pvsbf:")) != -1) {
+  while ((c = getopt(argc, argv, "p:vsbf:")) != -1) {
     if(c == 'v') verbose = 0;
-    if(c == 'p') file = 1;
-    if(c == 'b') site = 0;
+    else if(c == 'b') site = 0;
     else if(c == 'f') {
       if(!optarg) {
-        if(verbose) printf("Error reading file.\n");
+        if(verbose) printf("Error.\n");
         exit(EXIT_SUCCESS);
       }
       fname = optarg;
+    }
+    else if(c == 'p') {
+      if(!optarg) {
+        if(verbose) printf("Error.\n");
+        exit(EXIT_SUCCESS);
+      }
+      rname = optarg;
     }
   }
   if(fname) {
@@ -256,10 +262,9 @@ int main(int argc, char *argv[])
     }
     n = atoi(argv[optind++]);
     p = atof(argv[optind++]);
-    if(argc - optind > 0) n_threads = atoi(argv[optind]);
-
     if(p > 1.0) p = 1.0;
-    srand(time(NULL));
+    if(argc - optind > 0) n_threads = atoi(argv[optind]);
+    
     if(site) {
       a = site_array(n, p);
       print_site_array(a, n);
@@ -322,8 +327,12 @@ int main(int argc, char *argv[])
     printf("Col percolation: %s\n\n", cperc ? "True" : "False");
   }
 
-  if(file && !fname) {
-    FILE* f = fopen("../results.txt", "a");
+  if(rname && !fname) {
+    FILE* f = fopen(rname, "a");
+    if(!f) {
+      if(verbose) printf("Error.\n");
+      exit(EXIT_SUCCESS);
+    }
     fprintf(f, "%d,%f,%d,%d,%d,%d,%d,%f,%f,%f\n", n, p, n_threads, num, max, rperc, cperc, perc_time, join_time, total);
     fclose(f);
   }
