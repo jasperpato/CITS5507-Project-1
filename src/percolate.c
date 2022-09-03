@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <string.h>
 #include <unistd.h>
 #include <omp.h>
 
@@ -36,10 +35,10 @@ static short has_neighbours(Bond* b, int n, Site* s)
  */
 static Site* bottom_neighbour(Site* a, Bond* b, int n, Site* s)
 {
-  int i = ((s->r+n+1)%n)*n+s->c;
+  int i = ((s->r+n+1)%n)*n+s->c; // index of bottom neighbour in a and bottom bond in b
   Site *nb = &a[i];
   if((!b && !nb->occupied) || (b && !b->v[i])) return NULL;
-  if(!s->cluster || !nb->cluster) { printf("Never.\n"); return NULL; }
+  if(!s->cluster || !nb->cluster) { printf("Error if here.\n"); return NULL; }
   if(s->cluster->id == nb->cluster->id) return NULL;
   return nb;
 }
@@ -69,7 +68,7 @@ static void get_neighbours(Site* a, Bond* b, int n, int n_threads, Site* s, Site
     int start = tid*n*(n/n_threads);
     int end = (tid+1)*n*(n/n_threads);
     if(tid+1 == n_threads) end = n*n;
-    if(is[i] < start || is[i] >= end) nbs[i] = NULL; // out of thread bounds
+    if(is[i] < start || is[i] >= end) nbs[i] = NULL; // out of allocated thread bounds
     else if(!nb->seen && (
       (!b && nb->occupied) ||
       (b && ((i<2 && b->h[ib[i]]) || (i>=2 && b->v[ib[i]]))))
@@ -143,14 +142,7 @@ static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
       Site *nb = bottom_neighbour(a, b, n, s);
       if(!nb) continue;
       Cluster *nc = nb->cluster;
-      // if(!nc) { // add single neighbour
-      //   if(!sc->rows[nb->r]) sc->height++;
-      //   sc->rows[nb->r] = 1;
-      //   if(!sc->cols[nb->c]) sc->width++;
-      //   sc->cols[nb->c] = 1;
-      //   sc->sites[sc->size++] = nb->r*n+nb->c;
-      // }
-      // combine two clusters
+      // combine two clusters into sc
       int sc_size = sc->size;
       sc->size += nc->size;
       for(int i = 0; i < n; ++i) {
@@ -234,14 +226,14 @@ int main(int argc, char *argv[])
     if(site) {
       a = file_site_array(fname, n);
       if(!a) {
-        printf("Memory error.\n");
+        printf("Error.\n");
         return 0;
       }
       print_site_array(a, n);
     } else {
       b = file_bond(fname, n);
       if(!b) {
-        printf("Memory error.\n");
+        printf("Error.\n");
         return 0;
       }
       a = site_array(n, -1.0);
@@ -311,6 +303,9 @@ int main(int argc, char *argv[])
   printf(" Scan time: %9.6f\n", omp_get_wtime()-join);
 
   printf("Total time: %9.6f\n", omp_get_wtime()-start);
-  printf("\n   Num clusters: %d\n       Max size: %d\nRow percolation: %s\nCol percolation: %s\n\n", num, max, rperc ? "True" : "False", cperc ? "True" : "False");
+  printf("\n   Num clusters: %d\n", num);
+  printf("       Max size: %d\n", max);
+  printf("Row percolation: %s\n", rperc ? "True" : "False");
+  printf("Col percolation: %s\n\n", cperc ? "True" : "False");
   return 0;
 }
