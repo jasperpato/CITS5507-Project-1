@@ -4,12 +4,9 @@
  * @param n size of lattice
  * @param p probability of a bond
  * @return Bond* pointer to a bond struct that contains vertical and horizontal bond information
- * 
- * NOTE: this could be parallelised
  */
 Bond* bond(int n, float p)
 {
-  srand(time(NULL));
   Bond* b = calloc(1, sizeof(Bond));
   if(!b) return NULL;
   b->v = calloc(n*n, sizeof(short));
@@ -27,8 +24,7 @@ Bond* bond(int n, float p)
 }
 
 /**
- * @param filename 
- * @brief assume lattice size n
+ * @param n assume lattice size n
  * @return pointer to a bond struct scanned from a file
  */
 Bond* file_bond(char* filename, int n)
@@ -80,7 +76,7 @@ Bond* file_bond(char* filename, int n)
 void print_bond(Bond* b, int n)
 {
   if(!b || n > 40 || n < 2) return;
-  int s = (int)log10(n-1) + 1;
+  int s = num_digits(n-1);
   printf("\n");
   for(int i = 0; i < s; ++i) printf(" ");
   printf(" ");

@@ -8,7 +8,6 @@
  */
 Site* site_array(int n, float p)
 {
-  srand(time(NULL));
   Site* sites = calloc(n*n, sizeof(Site));
   if(!sites) return NULL;
   for(int i = 0; i < n*n; ++i) {
@@ -55,7 +54,7 @@ Site* file_site_array(char* filename, int n) {
 void print_site_array(Site* a, int n)
 {
   if(!a || n > 40 || n < 2) return;
-  int s = (int)log10(n-1) + 1;
+  int s = num_digits(n-1);
   printf("\n ");
   for(int i = 0; i < s; ++i) printf(" ");
   for(int c = 0; c < n; ++c) printf("\033[0;34m %*d\033[0;30m", s, c);

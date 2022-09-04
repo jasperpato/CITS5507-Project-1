@@ -1,5 +1,8 @@
 #include "../include/cluster.h"
 
+/** 
+ * @return pointer to a new cluster starting from site (r, c)  
+ */
 Cluster* cluster(int n, int r, int c) {
   Cluster *cl = (Cluster*)calloc(1, sizeof(Cluster));
   if(!cl) return NULL;
@@ -18,9 +21,12 @@ Cluster* cluster(int n, int r, int c) {
   return cl;
 }
 
-CPArray* cluster_array(int n_threads, int max_clusters) {
+/** 
+ * @return CPArray* 
+ */
+CPArray* cluster_array(int n_threads, int num_clusters) {
   CPArray* cpa = calloc(n_threads, sizeof(CPArray));
-  for(int i = 0; i < n_threads; ++i) cpa[i].cls = calloc(max_clusters, sizeof(Cluster*));
+  for(int i = 0; i < n_threads; ++i) cpa[i].cls = calloc(num_clusters, sizeof(Cluster*));
   return cpa;
 }
 

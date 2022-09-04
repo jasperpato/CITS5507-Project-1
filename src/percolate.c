@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
   Site* a = NULL;
   Bond* b = NULL;
   
-  short site = 1, verbose = 1, file = 0;
+  short site = 1, verbose = 1, seed = 1;
   char* fname = NULL, *rname = NULL;
 
   int n;
@@ -209,17 +209,18 @@ int main(int argc, char *argv[])
   int n_threads = 1;
   
   int c;
-  while ((c = getopt(argc, argv, "p:vsbf:")) != -1) {
-    if(c == 'v') verbose = 0;
-    else if(c == 'b') site = 0;
-    else if(c == 'f') {
+  while ((c = getopt(argc, argv, "p:f:rvsb")) != -1) {
+    if(c == 'v') verbose = 0;   // silence printing
+    else if(c == 'r') seed = 0; // seed srand with constant
+    else if(c == 'b') site = 0; // bond
+    else if(c == 'f') {         // lattice from file
       if(!optarg) {
         if(verbose) printf("Error.\n");
         exit(EXIT_SUCCESS);
       }
       fname = optarg;
     }
-    else if(c == 'p') {
+    else if(c == 'p') {         // write results to file
       if(!optarg) {
         if(verbose) printf("Error.\n");
         exit(EXIT_SUCCESS);
@@ -265,6 +266,8 @@ int main(int argc, char *argv[])
     if(p > 1.0) p = 1.0;
     if(argc - optind > 0) n_threads = atoi(argv[optind]);
     
+    if(seed) srand(time(NULL));
+    else srand(0);
     if(site) {
       a = site_array(n, p);
       print_site_array(a, n);
@@ -279,8 +282,8 @@ int main(int argc, char *argv[])
     exit(EXIT_SUCCESS);
   }
 
-  int est_num_clusters = 1;
-  int est_cluster_size = 1;
+  // int est_num_clusters;
+  // int est_cluster_size;
   int max_clusters = n % 2 == 0 ? n*n/2 : (n-1)*(n-1)/2+1;
 
   int max_threads = omp_get_max_threads();
@@ -288,7 +291,6 @@ int main(int argc, char *argv[])
   if(n_threads > n) n_threads = n;
   omp_set_num_threads(n_threads);
   CPArray* cpa = cluster_array(n_threads, max_clusters); // each thread keeps an array of its cluster pointers 
-  int cpa_size = est_num_clusters;
 
   if(verbose) printf("\n%s %d-Thread\n\nN: %d\n", site ? "Site" : "Bond", n_threads, n);
   if(p != -1.0) if(verbose) printf("P: %.2f\n", p);  
