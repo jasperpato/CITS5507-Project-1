@@ -8,6 +8,7 @@
  */
 Site* site_array(int n, float p)
 {
+  srand(time(NULL));
   Site* sites = calloc(n*n, sizeof(Site));
   if(!sites) return NULL;
   for(int i = 0; i < n*n; ++i) {

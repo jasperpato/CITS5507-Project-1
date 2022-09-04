@@ -26,7 +26,7 @@ static short has_neighbours(Bond* b, int n, Site* s)
   for(int i = 0; i < 4; ++i) {
     if((i<2 && b->h[ib[i]]) || (i>=2 && b->v[ib[i]])) return 1; 
   }
-  return 0;
+  exit(EXIT_SUCCESS);
 }
 
 /**
@@ -38,7 +38,10 @@ static Site* bottom_neighbour(Site* a, Bond* b, int n, Site* s)
   int i = ((s->r+n+1)%n)*n+s->c; // index of bottom neighbour in a and bottom bond in b
   Site *nb = &a[i];
   if((!b && !nb->occupied) || (b && !b->v[i])) return NULL;
-  if(!s->cluster || !nb->cluster) { printf("Error if here.\n"); return NULL; }
+  if(!s->cluster || !nb->cluster) {
+    printf("Error if here.\n");
+    return NULL;
+  }
   if(s->cluster->id == nb->cluster->id) return NULL;
   return nb;
 }
@@ -198,63 +201,70 @@ int main(int argc, char *argv[])
   Site* a = NULL;
   Bond* b = NULL;
   
-  short site = 1;
-  char* fname = NULL;
+  short site = 1, verbose = 1, file = 0;
+  char* fname = NULL, *rname = NULL;
 
   int n;
   float p = -1.0;
   int n_threads = 1;
   
   int c;
-  while ((c = getopt(argc, argv, "sbf:")) != -1) {
-    if(c == 'b') site = 0;
+  while ((c = getopt(argc, argv, "p:vsbf:")) != -1) {
+    if(c == 'v') verbose = 0;
+    else if(c == 'b') site = 0;
     else if(c == 'f') {
       if(!optarg) {
-        printf("Error reading file.\n");
-        return 0;
+        if(verbose) printf("Error.\n");
+        exit(EXIT_SUCCESS);
       }
       fname = optarg;
+    }
+    else if(c == 'p') {
+      if(!optarg) {
+        if(verbose) printf("Error.\n");
+        exit(EXIT_SUCCESS);
+      }
+      rname = optarg;
     }
   }
   if(fname) {
     if(argc - optind < 1) {
-      printf("Invalid arguments.\n");
-      return 0;
+      if(verbose) printf("Invalid arguments.\n");
+      exit(EXIT_SUCCESS);
     }
     n = atoi(argv[optind++]);
     if(argc - optind > 0) n_threads = atoi(argv[optind]);
     if(site) {
       a = file_site_array(fname, n);
       if(!a) {
-        printf("Error.\n");
-        return 0;
+        if(verbose) printf("Error.\n");
+        exit(EXIT_SUCCESS);
       }
       print_site_array(a, n);
     } else {
       b = file_bond(fname, n);
       if(!b) {
-        printf("Error.\n");
-        return 0;
+        if(verbose) printf("Error.\n");
+        exit(EXIT_SUCCESS);
       }
       a = site_array(n, -1.0);
       if(!a) {
-        printf("Memory error.\n");
-        return 0;
+        if(verbose) printf("Memory error.\n");
+        exit(EXIT_SUCCESS);
       }
       print_bond(b, n);
     }
   }
   else {
     if(argc - optind < 2) {
-      printf("Invalid arguments.\n");
-      return 0;
+      if(verbose) printf("Invalid arguments.\n");
+      exit(EXIT_SUCCESS);
     }
     n = atoi(argv[optind++]);
     p = atof(argv[optind++]);
-    if(argc - optind > 0) n_threads = atoi(argv[optind]);
-
     if(p > 1.0) p = 1.0;
-    srand(time(NULL));
+    if(argc - optind > 0) n_threads = atoi(argv[optind]);
+    
     if(site) {
       a = site_array(n, p);
       print_site_array(a, n);
@@ -265,9 +275,12 @@ int main(int argc, char *argv[])
     }
   }
   if(n < 1 || n_threads < 1) {
-    printf("Invalid arguments.");
-    return 0;
+    if(verbose) printf("Invalid arguments.");
+    exit(EXIT_SUCCESS);
   }
+
+  int est_num_clusters = 1;
+  int est_cluster_size = 1;
   int max_clusters = n % 2 == 0 ? n*n/2 : (n-1)*(n-1)/2+1;
 
   int max_threads = omp_get_max_threads();
@@ -275,12 +288,13 @@ int main(int argc, char *argv[])
   if(n_threads > n) n_threads = n;
   omp_set_num_threads(n_threads);
   CPArray* cpa = cluster_array(n_threads, max_clusters); // each thread keeps an array of its cluster pointers 
+  int cpa_size = est_num_clusters;
 
-  printf("\n%s %d-Thread\n\nN: %d\n", site ? "Site" : "Bond", n_threads, n);
-  if(p != -1.0) printf("P: %.2f\n", p);  
+  if(verbose) printf("\n%s %d-Thread\n\nN: %d\n", site ? "Site" : "Bond", n_threads, n);
+  if(p != -1.0) if(verbose) printf("P: %.2f\n", p);  
 
   double init = omp_get_wtime();
-  printf("\n Init time: %9.6f\n", init-start);
+  if(verbose) printf("\n Init time: %9.6f\n", init-start);
 
   #pragma omp parallel
   {
@@ -288,11 +302,13 @@ int main(int argc, char *argv[])
     percolate(a, b, n, n_threads, &cpa[num], num);
   }
   double pt = omp_get_wtime();
-  printf(" Perc time: %9.6f\n", pt-init);
+  double perc_time = pt-init;
+  if(verbose) printf(" Perc time: %9.6f\n", perc_time);
 
   if(n_threads > 1) join_clusters(a, b, n, n_threads);
   double join = omp_get_wtime();
-  printf(" Join time: %9.6f\n", join-pt);
+  double join_time = join-pt;
+  if(verbose) printf(" Join time: %9.6f\n", join_time);
   
   // free(a);
   // if(b) free_bond(b);
@@ -300,12 +316,25 @@ int main(int argc, char *argv[])
   int num = 0, max = 0;
   short rperc = 0, cperc = 0;
   scan_clusters(cpa, n, n_threads, &num, &max, &rperc, &cperc);
-  printf(" Scan time: %9.6f\n", omp_get_wtime()-join);
+  if(verbose) printf(" Scan time: %9.6f\n", omp_get_wtime()-join);
 
-  printf("Total time: %9.6f\n", omp_get_wtime()-start);
-  printf("\n   Num clusters: %d\n", num);
-  printf("       Max size: %d\n", max);
-  printf("Row percolation: %s\n", rperc ? "True" : "False");
-  printf("Col percolation: %s\n\n", cperc ? "True" : "False");
-  return 0;
+  double total = omp_get_wtime()-start;
+  if(verbose) {
+    printf("Total time: %9.6f\n", total);
+    printf("\n   Num clusters: %d\n", num);
+    printf("       Max size: %d\n", max);
+    printf("Row percolation: %s\n", rperc ? "True" : "False");
+    printf("Col percolation: %s\n\n", cperc ? "True" : "False");
+  }
+
+  if(rname && !fname) {
+    FILE* f = fopen(rname, "a");
+    if(!f) {
+      if(verbose) printf("Error.\n");
+      exit(EXIT_SUCCESS);
+    }
+    fprintf(f, "%d,%f,%d,%d,%d,%d,%d,%f,%f,%f\n", n, p, n_threads, num, max, rperc, cperc, perc_time, join_time, total);
+    fclose(f);
+  }
+  exit(EXIT_SUCCESS);
 }
