@@ -60,6 +60,10 @@ float* get_avgs(float **results, int size, int n, float p, int n_threads) {
   return avgs;
 }
 
+/**
+ * @brief query results file to get average results for a set of parameters (n p n_threads)
+ *        ./results results_file n p n_threads 
+ */
 int main(int argc, char *argv[]) {
   if(argc < 5) exit(EXIT_FAILURE);
   
