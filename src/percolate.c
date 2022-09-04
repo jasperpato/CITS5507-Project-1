@@ -215,14 +215,14 @@ int main(int argc, char *argv[])
     else if(c == 'b') site = 0; // bond
     else if(c == 'f') {         // lattice from file
       if(!optarg) {
-        if(verbose) printf("Error.\n");
+        printf("Error.\n");
         exit(EXIT_SUCCESS);
       }
       fname = optarg;
     }
     else if(c == 'p') {         // write results to file
       if(!optarg) {
-        if(verbose) printf("Error.\n");
+        printf("Error.\n");
         exit(EXIT_SUCCESS);
       }
       rname = optarg;
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
   }
   if(fname) {
     if(argc - optind < 1) {
-      if(verbose) printf("Invalid arguments.\n");
+      printf("Invalid arguments.\n");
       exit(EXIT_SUCCESS);
     }
     n = atoi(argv[optind++]);
@@ -238,19 +238,19 @@ int main(int argc, char *argv[])
     if(site) {
       a = file_site_array(fname, n);
       if(!a) {
-        if(verbose) printf("Error.\n");
+        printf("Error.\n");
         exit(EXIT_SUCCESS);
       }
       print_site_array(a, n);
     } else {
       b = file_bond(fname, n);
       if(!b) {
-        if(verbose) printf("Error.\n");
+        printf("Error.\n");
         exit(EXIT_SUCCESS);
       }
       a = site_array(n, -1.0);
       if(!a) {
-        if(verbose) printf("Memory error.\n");
+        printf("Memory error.\n");
         exit(EXIT_SUCCESS);
       }
       print_bond(b, n);
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
   }
   else {
     if(argc - optind < 2) {
-      if(verbose) printf("Invalid arguments.\n");
+      printf("Invalid arguments.\n");
       exit(EXIT_SUCCESS);
     }
     n = atoi(argv[optind++]);
@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
     }
   }
   if(n < 1 || n_threads < 1) {
-    if(verbose) printf("Invalid arguments.");
+    printf("Invalid arguments.");
     exit(EXIT_SUCCESS);
   }
 
@@ -332,7 +332,7 @@ int main(int argc, char *argv[])
   if(rname && !fname) {
     FILE* f = fopen(rname, "a");
     if(!f) {
-      if(verbose) printf("Error.\n");
+      printf("Error.\n");
       exit(EXIT_SUCCESS);
     }
     fprintf(f, "%d,%f,%d,%d,%d,%d,%d,%f,%f,%f\n", n, p, n_threads, num, max, rperc, cperc, perc_time, join_time, total);
