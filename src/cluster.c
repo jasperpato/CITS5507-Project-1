@@ -15,7 +15,7 @@ Cluster* cluster(int n, int r, int c) {
   cl->height = 1;
   cl->width = 1;
   cl->size = 1;
-  cl->sites = calloc(n*n, sizeof(int));
+  cl->sites = calloc(n*n, sizeof(int)); // only 2*n for border sites
   if(!cl->sites) return NULL;
   cl->sites[0] = r*n+c;
   return cl;

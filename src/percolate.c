@@ -99,6 +99,7 @@ static void DFS(Site* a, Bond* b, int n, int n_threads, Stack* st, short tid) {
       if(!cl->cols[nb->c]) cl->width++;
       cl->rows[nb->r] = 1;
       cl->cols[nb->c] = 1;
+      // only if on border
       cl->sites[cl->size] = nb->r*n+nb->c; // add index of neighbour to cluster's site index array
       cl->size++;
       add(st, nb);
@@ -132,6 +133,8 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
 
 /**
  * @brief merges clusters along the bottom border of row
+ * 
+ * THOUGHT: only sites on thread border need to be stored in cluster sites array and updated (will also decrease memory requirements)
  */
 static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
   for(int i = 0; i < n_threads; ++i) {
@@ -160,6 +163,7 @@ static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
       }
       for(int j = 0; j < nc->size; ++j) {
         int ix = nc->sites[j];
+        // only if on border
         sc->sites[j+sc_size] = ix;
         if(ix == nb->r*n+nb->c) continue; // don't overwrite neighbour until last
         a[ix].cluster = sc;
