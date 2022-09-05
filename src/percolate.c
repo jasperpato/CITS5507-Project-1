@@ -11,7 +11,7 @@
 
 /**
  * @brief Check if a site has at least one bond to a neighbour (and can therefore be the start of a cluster)
- *        Returns true even if neighbour is across the thread boundary (because they need to be joined later).
+ *        Returns true even if neighbour is across the thread boundary (because the clusters need to be joined later).
  * @return short boolean true iff has at least one neighbour
  */
 static short has_neighbours(Bond* b, int n, Site* s)
@@ -29,8 +29,17 @@ static short has_neighbours(Bond* b, int n, Site* s)
   exit(EXIT_SUCCESS);
 }
 
+/** 
+ * @return short boolean true iff site lies on thread boundary (and therefore needs to maintain latest cluster info for possible future joins)
+ */
+static short on_border(int n, int i, int start, int end) {
+  if(i >= start && i < start+n) return 1;
+  if(i >= end-n && i < end) return 1;
+  return 0;
+}
+
 /**
- * @brief get bottom neighbour to site s, intended for across the thread boundary.
+ * @brief get bottom neighbour to site s, intended for crossing the thread boundary in a cluster join.
  * @return site pointer to bottom neighbour if connected and separate cluster, else NULL
  */
 static Site* bottom_neighbour(Site* a, Bond* b, int n, Site* s)
@@ -108,9 +117,9 @@ static void DFS(Site* a, Bond* b, int n, int n_threads, Stack* st, short tid) {
 }
 
 /**
- * @brief Simulate percolation using DFS. Outputs max cluster size and percolation boolean.
+ * @brief Simulate percolation using DFS in a given region of the lattice.
  * @param a site array
- * @param b bond struct, either valid address if [-b] or NUll if [-s]
+ * @param b bond struct, either valid address if [-b] or NULL if [-s]
  */
 static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, short tid)
 {
@@ -132,7 +141,7 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
 }
 
 /**
- * @brief merges clusters along the bottom border of row
+ * @brief merges clusters along the bottom row of each thread region
  * 
  * THOUGHT: only sites on thread border need to be stored in cluster sites array and updated (will also decrease memory requirements)
  */
@@ -174,6 +183,9 @@ static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
   }
 }
 
+/**
+ * @brief scan each cluster and find num_clusters, max_cluster_size and row and col percolation.
+ */
 static void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max, short *rperc, short *cperc) {
   short rp = 0, cp = 0;
   int nm = 0, m = 0;
@@ -196,7 +208,7 @@ static void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max
 }
 
 /**
- * USAGE: ./percolate [-b | -s] [ [-f FILENAME] | PROBABILITY ]
+ * USAGE: ./percolate [-b | -s] [ [-f FILENAME] | [N PROBABILITY] ] [N_THREADS]
  */
 int main(int argc, char *argv[])
 {
