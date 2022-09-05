@@ -6,7 +6,7 @@
 
 typedef struct Cluster {
   short *rows, *cols;
-  int id, size, height, width; // id is initial site s index: s.r*n+s.c
+  int id, size, height, width, site_size; // id is initial site s index: s.r*n+s.c
   int* sites;
 } Cluster;
 
@@ -15,7 +15,7 @@ typedef struct CPArray {
   int size;
 } CPArray;
 
-Cluster* cluster(int, int, int);
+Cluster* cluster(int, int, int, int);
 CPArray* cluster_array(int, int);
 void free_cluster(Cluster*);
 void free_cparray(CPArray*, int);
