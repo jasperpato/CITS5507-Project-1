@@ -30,11 +30,15 @@ static short has_neighbours(Bond* b, int n, Site* s)
 }
 
 /** 
- * @return short boolean true iff site lies on thread boundary (and therefore needs to maintain latest cluster info for possible future joins)
+ * @return short boolean true iff site lies on a thread boundary (and therefore needs to maintain latest cluster info for possible future joins)
  */
-static short on_border(int n, int i, int start, int end) {
-  if(i >= start && i < start+n) return 1;
-  if(i >= end-n && i < end) return 1;
+static short on_border(int n, int idx, int n_threads) {
+  for(int i = 0; i < n_threads; ++i) {
+    int start = i*n*(n/n_threads);
+    int end = (i+1)*n*(n/n_threads);
+    if(i+1 == n_threads) end = n*n;
+    if((idx >= start && idx < start+n) || (idx >= end-n && idx < end)) return 1;
+  }
   return 0;
 }
 
@@ -101,13 +105,13 @@ static void DFS(Site* a, Bond* b, int n, int n_threads, Stack* st, int start, in
       if(!nbs[i]) continue; 
       Site* nb = nbs[i];
       nb->cluster = cl;
+      ++cl->size;
       if(!cl->rows[nb->r]) cl->height++;
       if(!cl->cols[nb->c]) cl->width++;
       cl->rows[nb->r] = 1;
       cl->cols[nb->c] = 1;
-      // only if on border
-      cl->sites[cl->size] = nb->r*n+nb->c; // add index of neighbour to cluster's site index array
-      cl->size++;
+      int idx = nb->r*n+nb->c;
+      if(on_border(n, idx, n_threads)) cl->sites[cl->site_size++] = idx; // add index of neighbour to cluster's site index array
       add(st, nb);
     }
   }
@@ -128,8 +132,11 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
     Site *s = &a[i];
     if(!s->seen && ((!b && s->occupied) || (b && has_neighbours(b, n, s)))) {
       s->seen = 1;
-      s->cluster = cluster(n, i/n, i%n);
-      cpa->cls[cpa->size++] = s->cluster; 
+      s->cluster = cluster(n, n_threads, i/n, i%n);
+      Cluster *sc = s->cluster;
+      int idx = s->r*n+s->c;
+      if(on_border(n, idx, n_threads)) sc->sites[sc->site_size++] = idx;
+      cpa->cls[cpa->size++] = sc; 
       add(st, s);
       DFS(a, b, n, n_threads, st, start, end);
     }   
@@ -144,18 +151,20 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
  */
 static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
   for(int i = 0; i < n_threads; ++i) {
-    int start = i*n*(n/n_threads);
-    int end = (i+1)*n*(n/n_threads);
-    if(i+1 == n_threads) end = n*n;
-    for(int i = start; i < end; ++i) { // loop along row
+    int row_end = (i+1)*n*(n/n_threads);
+    if(i+1 == n_threads) row_end = n*n;
+    int row_start = row_end-n;
+    for(int i = row_start; i < row_end; ++i) { // loop along row
       Site *s = &a[i];
       Cluster *sc = s->cluster;
       if(!sc) continue;
       Site *nb = bottom_neighbour(a, b, n, s);
       if(!nb) continue;
       Cluster *nc = nb->cluster;
+
+      // printf("S: %d (%d), NB: %d (%d)\n", i, sc->size, nb->r*n+nb->c, nc->size);
+
       // combine two clusters into sc
-      int sc_size = sc->size;
       sc->size += nc->size;
       for(int i = 0; i < n; ++i) {
         if(nc->rows[i]) {
@@ -167,12 +176,10 @@ static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
           sc->cols[i] = 1;
         }
       }
-      for(int j = 0; j < nc->size; ++j) {
-        int ix = nc->sites[j];
-        // only if on border
-        sc->sites[j+sc_size] = ix;
-        if(ix == nb->r*n+nb->c) continue; // don't overwrite neighbour until last
-        a[ix].cluster = sc;
+      for(int j = 0; j < nc->site_size; ++j) {
+        int idx = nc->sites[j];
+        sc->sites[sc->site_size++] = idx;
+        if(idx != nb->r*n+nb->c) a[idx].cluster = sc; // don't overwrite neighbour until last
       }
       nc->id = -1; // mark as obsolete
       nb->cluster = sc; // now overwrite neighbour
@@ -320,6 +327,11 @@ int main(int argc, char *argv[])
   double perc_time = pt-init;
   if(verbose) printf(" Perc time: %9.6f\n", perc_time);
 
+  int num = 0, max = 0;
+  short rperc = 0, cperc = 0;
+  scan_clusters(cpa, n, n_threads, &num, &max, &rperc, &cperc);
+  printf("%d %d %d %d\n", num, max, rperc, cperc);
+
   if(n_threads > 1) join_clusters(a, b, n, n_threads);
   double join = omp_get_wtime();
   double join_time = join-pt;
@@ -328,8 +340,8 @@ int main(int argc, char *argv[])
   // free(a);
   // if(b) free_bond(b);
 
-  int num = 0, max = 0;
-  short rperc = 0, cperc = 0;
+  // int num = 0, max = 0;
+  // short rperc = 0, cperc = 0;
   scan_clusters(cpa, n, n_threads, &num, &max, &rperc, &cperc);
   if(verbose) printf(" Scan time: %9.6f\n", omp_get_wtime()-join);
 

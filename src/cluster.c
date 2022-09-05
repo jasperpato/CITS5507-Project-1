@@ -3,7 +3,7 @@
 /** 
  * @return pointer to a new cluster starting from site (r, c)  
  */
-Cluster* cluster(int n, int r, int c) {
+Cluster* cluster(int n, int n_threads, int r, int c) {
   Cluster *cl = (Cluster*)calloc(1, sizeof(Cluster));
   if(!cl) return NULL;
   cl->rows = (short*)calloc(n, sizeof(short));
@@ -15,9 +15,8 @@ Cluster* cluster(int n, int r, int c) {
   cl->height = 1;
   cl->width = 1;
   cl->size = 1;
-  cl->sites = calloc(n*n, sizeof(int)); // only 2*n for border sites
+  cl->sites = calloc(2*n*n_threads, sizeof(int)); // only stores border sites
   if(!cl->sites) return NULL;
-  cl->sites[0] = r*n+c;
   return cl;
 }
 
