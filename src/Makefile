@@ -1,6 +1,6 @@
 IDIR = ../include
 CC = gcc
-CFLAGS = -I$(IDIR) -std=c11 -Wall -Werror -fopenmp
+CFLAGS = -I$(IDIR) -std=c11 -Wall -Werror -fopenmp -Wno-unused-function
 
 ODIR = obj
 LDIR = ../lib

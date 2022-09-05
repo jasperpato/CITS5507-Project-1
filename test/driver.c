@@ -24,16 +24,15 @@ int main(int argc, char *argv[]) {
         float p = (float)pi/100.0;
         if(err) break;
         for(int nt = NT_MIN; nt <= NT_MAX; nt+=NT_STEP) {
-          printf("n %d p %f nt %d\n",n, p, nt);
-          continue;
           int pid = fork();
           if(pid == -1) {
             err = 1;
             break;
           }
           else if(pid == 0) { // child
-            char *args[] = {"percolate", "-v", "-p", "./results.txt", NULL, NULL, NULL, NULL};
-            for(int i = 4; i < 7; ++i) args[i] = malloc(8*sizeof(char));
+            char *args[] = {"percolate", "-v", "-p", NULL, NULL, NULL, NULL, NULL};
+            for(int i = 3; i < 7; ++i) args[i] = malloc(50*sizeof(char));
+            sprintf(args[3], "%s", argv[1]);
             sprintf(args[4], "%d", n);
             sprintf(args[5], "%.2f", p);
             sprintf(args[6], "%d", nt);

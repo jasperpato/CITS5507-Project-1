@@ -26,7 +26,7 @@ static short has_neighbours(Bond* b, int n, Site* s)
   for(int i = 0; i < 4; ++i) {
     if((i<2 && b->h[ib[i]]) || (i>=2 && b->v[ib[i]])) return 1; 
   }
-  exit(EXIT_SUCCESS);
+  return 0;
 }
 
 /** 
@@ -59,7 +59,7 @@ static Site* bottom_neighbour(Site* a, Bond* b, int n, Site* s)
  * @return Site** array of size 4 of neighbour's site pointers. Pointer is either a valid address
  *         if there is a connection to that neighbour, otherwise NULL
  */
-static void get_neighbours(Site* a, Bond* b, int n, int n_threads, Site* s, Site* nbs[], short tid)
+static void get_neighbours(Site* a, Bond* b, int n, int n_threads, Site* s, Site* nbs[], int start, int end)
 {
   // indices of neighbours
   int is[] = {
@@ -77,9 +77,6 @@ static void get_neighbours(Site* a, Bond* b, int n, int n_threads, Site* s, Site
   };
   for(int i = 0; i < 4; ++i) {
     Site* nb = &a[is[i]];
-    int start = tid*n*(n/n_threads);
-    int end = (tid+1)*n*(n/n_threads);
-    if(tid+1 == n_threads) end = n*n;
     if(is[i] < start || is[i] >= end) nbs[i] = NULL; // out of allocated thread bounds
     else if(!nb->seen && (
       (!b && nb->occupied) ||
@@ -94,11 +91,11 @@ static void get_neighbours(Site* a, Bond* b, int n, int n_threads, Site* s, Site
 /**
  * @brief loop through neighbours and update cluster
  */
-static void DFS(Site* a, Bond* b, int n, int n_threads, Stack* st, short tid) {
+static void DFS(Site* a, Bond* b, int n, int n_threads, Stack* st, int start, int end) {
   while(!is_empty(st)) {
     Site *s = pop(st);
     Site *nbs[4];
-    get_neighbours(a, b, n, n_threads, s, nbs, tid);
+    get_neighbours(a, b, n, n_threads, s, nbs, start, end);
     Cluster* cl = s->cluster;
     for(int i = 0; i < 4; ++i) { // loop through connected, unseen neighbours
       if(!nbs[i]) continue; 
@@ -134,7 +131,7 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
       s->cluster = cluster(n, i/n, i%n);
       cpa->cls[cpa->size++] = s->cluster; 
       add(st, s);
-      DFS(a, b, n, n_threads, st, tid);
+      DFS(a, b, n, n_threads, st, start, end);
     }   
   }
   // free_stack(st);
