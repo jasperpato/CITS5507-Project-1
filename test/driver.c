@@ -3,9 +3,9 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#define N_MIN 100
-#define N_MAX 2500
-#define N_STEP 100
+#define N_MIN 200
+#define N_MAX 5000
+#define N_STEP 200
 
 #define P_MIN 0
 #define P_MAX 1.0

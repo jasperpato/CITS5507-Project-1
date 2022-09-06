@@ -212,7 +212,7 @@ static void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max
 }
 
 /**
- * USAGE: ./percolate [-b | -s] [ [-f FILENAME] | [N PROBABILITY] ] [N_THREADS]
+ * USAGE: ./percolate [-b | -s] [-r SEED] [-p RESULTS_FILENAME] [[-f LATTICE_FILENAME] | [N PROBABILITY]] [N_THREADS]
  */
 int main(int argc, char *argv[])
 {
@@ -221,19 +221,21 @@ int main(int argc, char *argv[])
   Site* a = NULL;
   Bond* b = NULL;
   
-  short site = 1, verbose = 1, seed = 1;
+  // options
+  short site = 1, verbose = 1;
   char* fname = NULL, *rname = NULL;
+  unsigned int seed = time(NULL); // default uniqiue seed
 
+  // positional arguments
   int n;
   float p = -1.0;
   int n_threads = 1;
   
   int c;
-  while ((c = getopt(argc, argv, "p:f:rvsb")) != -1) {
+  while ((c = getopt(argc, argv, "vbsf:p:r:")) != -1) {
     if(c == 'v') verbose = 0;   // silence printing
-    else if(c == 'r') seed = 0; // seed srand with constant
     else if(c == 'b') site = 0; // bond
-    else if(c == 'f') {         // lattice from file
+    else if(c == 'f') {         // scan lattice from file
       if(!optarg) {
         printf("Error.\n");
         exit(EXIT_SUCCESS);
@@ -247,8 +249,15 @@ int main(int argc, char *argv[])
       }
       rname = optarg;
     }
+    else if(c == 'r') {         // seed rand with constant
+      if(!optarg) {
+        printf("Error.\n");
+        exit(EXIT_SUCCESS);
+      }
+      seed = atoi(optarg);
+    }
   }
-  if(fname) {
+  if(fname) { // scan lattice from file
     if(argc - optind < 1) {
       printf("Invalid arguments.\n");
       exit(EXIT_SUCCESS);
@@ -276,7 +285,7 @@ int main(int argc, char *argv[])
       print_bond(b, n);
     }
   }
-  else {
+  else { // initialise random lattice
     if(argc - optind < 2) {
       printf("Invalid arguments.\n");
       exit(EXIT_SUCCESS);
@@ -286,8 +295,7 @@ int main(int argc, char *argv[])
     if(p > 1.0) p = 1.0;
     if(argc - optind > 0) n_threads = atoi(argv[optind]);
     
-    if(seed) srand(time(NULL));
-    else srand(0);
+    srand(seed);
     if(site) {
       a = site_array(n, p);
       print_site_array(a, n);
@@ -298,7 +306,7 @@ int main(int argc, char *argv[])
     }
   }
   if(n < 1 || n_threads < 1) {
-    printf("Invalid arguments.");
+    printf("Invalid arguments.\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -312,8 +320,12 @@ int main(int argc, char *argv[])
   omp_set_num_threads(n_threads);
   CPArray* cpa = cluster_array(n_threads, max_clusters); // each thread keeps an array of its cluster pointers 
 
-  if(verbose) printf("\n%s %d-Thread\n\nN: %d\n", site ? "Site" : "Bond", n_threads, n);
-  if(p != -1.0) if(verbose) printf("P: %.2f\n", p);  
+  if(verbose) {
+    printf("\n%s %d-Thread\n", site ? "Site" : "Bond", n_threads);
+    printf("\nN: %d\n", n);
+    if(p != -1.0) printf("P: %.2f\n", p);
+    if(!fname) printf("S: %d\n", seed);
+  }
 
   double init = omp_get_wtime();
   if(verbose) printf("\n Init time: %9.6f\n", init-start);
@@ -327,11 +339,6 @@ int main(int argc, char *argv[])
   double perc_time = pt-init;
   if(verbose) printf(" Perc time: %9.6f\n", perc_time);
 
-  int num = 0, max = 0;
-  short rperc = 0, cperc = 0;
-  scan_clusters(cpa, n, n_threads, &num, &max, &rperc, &cperc);
-  printf("%d %d %d %d\n", num, max, rperc, cperc);
-
   if(n_threads > 1) join_clusters(a, b, n, n_threads);
   double join = omp_get_wtime();
   double join_time = join-pt;
@@ -340,8 +347,8 @@ int main(int argc, char *argv[])
   // free(a);
   // if(b) free_bond(b);
 
-  // int num = 0, max = 0;
-  // short rperc = 0, cperc = 0;
+  int num = 0, max = 0;
+  short rperc = 0, cperc = 0;
   scan_clusters(cpa, n, n_threads, &num, &max, &rperc, &cperc);
   if(verbose) printf(" Scan time: %9.6f\n", omp_get_wtime()-join);
 
@@ -360,7 +367,7 @@ int main(int argc, char *argv[])
       printf("Error.\n");
       exit(EXIT_SUCCESS);
     }
-    fprintf(f, "%d,%f,%d,%d,%d,%d,%d,%f,%f,%f\n", n, p, n_threads, num, max, rperc, cperc, perc_time, join_time, total);
+    fprintf(f, "%d,%f,%d,%d,%d,%d,%d,%d,%f,%f,%f\n", n, p, n_threads, seed, num, max, rperc, cperc, perc_time, join_time, total);
     fclose(f);
   }
   exit(EXIT_SUCCESS);
