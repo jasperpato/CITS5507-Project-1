@@ -24,7 +24,7 @@ Bond* bond(int n, float p)
 }
 
 /**
- * @param n assume lattice size n
+ * @param n assumed lattice size
  * @return pointer to a bond struct scanned from a file
  */
 Bond* file_bond(char* filename, int n)

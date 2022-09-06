@@ -1,6 +1,9 @@
 
 #include "../include/stack.h"
 
+/**
+ * @return Stack* pointer to a stack data structure with capacity size
+ */
 Stack* stack(int size) {
   Stack* st = calloc(1, sizeof(Stack));
   if(!st) return NULL;

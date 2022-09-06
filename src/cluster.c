@@ -15,13 +15,13 @@ Cluster* cluster(int n, int n_threads, int r, int c) {
   cl->height = 1;
   cl->width = 1;
   cl->size = 1;
-  cl->sites = calloc(2*n*n_threads, sizeof(int)); // only stores border sites
+  cl->sites = calloc(2*n*n_threads, sizeof(int)); // only needs to store border sites
   if(!cl->sites) return NULL;
   return cl;
 }
 
 /** 
- * @return CPArray* 
+ * @return CPArray* an array of CPArrays, one for each thread
  */
 CPArray* cluster_array(int n_threads, int num_clusters) {
   CPArray* cpa = calloc(n_threads, sizeof(CPArray));
@@ -40,5 +40,3 @@ void free_cparray(CPArray* cpa, int n_threads) {
   for(int i = 0; i < n_threads; ++i) free(cpa[i].cls);
   free(cpa);
 }
-
-

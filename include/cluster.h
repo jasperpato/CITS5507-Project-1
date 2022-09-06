@@ -2,7 +2,6 @@
 #define CLUSTER_H
 
 #include <stdlib.h>
-// #include <omp.h>
 
 typedef struct Cluster {
   short *rows, *cols;

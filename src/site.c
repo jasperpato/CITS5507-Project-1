@@ -1,10 +1,8 @@
 #include "../include/site.h"
 
 /**
- * @param p probability of occupation. Negative p will skip the occupation selection step
+ * @param p probability of occupation. Negative p will skip the occupation step for performance (for bond percolation)
  * @return Site* pointer to site array
- * 
- * NOTE: this could be parallelised
  */
 Site* site_array(int n, float p)
 {
@@ -22,8 +20,7 @@ Site* site_array(int n, float p)
 }
 
 /**
- * @brief assume lattice size N
- * @param filename 
+ * @param n assumed lattice size 
  * @return Site* site array scanned from file
  */
 Site* file_site_array(char* filename, int n) {

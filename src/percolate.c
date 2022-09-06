@@ -12,6 +12,7 @@
 /**
  * @brief Check if a site has at least one bond to a neighbour (and can therefore be the start of a cluster)
  *        Returns true even if neighbour is across the thread boundary (because the clusters need to be joined later).
+ *        Only used in bond percolation.
  * @return short boolean true iff has at least one neighbour
  */
 static short has_neighbours(Bond* b, int n, Site* s)
@@ -30,11 +31,11 @@ static short has_neighbours(Bond* b, int n, Site* s)
 }
 
 /** 
- * @return short boolean true iff site lies on a thread boundary (and therefore needs to maintain latest cluster info for possible future joins)
+ * @return short boolean true iff site lies on a thread boundary (and therefore needs to maintain latest cluster info for possible future cluster joins)
  */
 static short on_border(int n, int idx, int n_threads) {
   for(int i = 0; i < n_threads; ++i) {
-    int start = i*n*(n/n_threads);
+    int start = i*n*(n/n_threads); // region boundaries
     int end = (i+1)*n*(n/n_threads);
     if(i+1 == n_threads) end = n*n;
     if((idx >= start && idx < start+n) || (idx >= end-n && idx < end)) return 1;
@@ -52,7 +53,7 @@ static Site* bottom_neighbour(Site* a, Bond* b, int n, Site* s)
   Site *nb = &a[i];
   if((!b && !nb->occupied) || (b && !b->v[i])) return NULL;
   if(!s->cluster || !nb->cluster) {
-    printf("Error if here.\n");
+    printf("Error if here.\n"); // both clusters should have been initialised
     return NULL;
   }
   if(s->cluster->id == nb->cluster->id) return NULL;
@@ -60,8 +61,8 @@ static Site* bottom_neighbour(Site* a, Bond* b, int n, Site* s)
 }
 
 /**
- * @return Site** array of size 4 of neighbour's site pointers. Pointer is either a valid address
- *         if there is a connection to that neighbour, otherwise NULL
+ * @return Site** array of four neighbours' site pointers. Pointer is either a valid address
+ *         if there is a connection to that neighbour, the neighbour is unseen and it is within thread bounds, otherwise NULL
  */
 static void get_neighbours(Site* a, Bond* b, int n, int n_threads, Site* s, Site* nbs[], int start, int end)
 {
@@ -81,7 +82,7 @@ static void get_neighbours(Site* a, Bond* b, int n, int n_threads, Site* s, Site
   };
   for(int i = 0; i < 4; ++i) {
     Site* nb = &a[is[i]];
-    if(is[i] < start || is[i] >= end) nbs[i] = NULL; // out of allocated thread bounds
+    if(is[i] < start || is[i] >= end) nbs[i] = NULL; // out of thread bounds
     else if(!nb->seen && (
       (!b && nb->occupied) ||
       (b && ((i<2 && b->h[ib[i]]) || (i>=2 && b->v[ib[i]]))))
@@ -93,7 +94,7 @@ static void get_neighbours(Site* a, Bond* b, int n, int n_threads, Site* s, Site
 }
 
 /**
- * @brief loop through neighbours and update cluster
+ * @brief loop through neighbours and update cluster information
  */
 static void DFS(Site* a, Bond* b, int n, int n_threads, Stack* st, int start, int end) {
   while(!is_empty(st)) {
@@ -126,7 +127,7 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
 {
   int start = tid*n*(n/n_threads);
   int end = (tid+1)*n*(n/n_threads);
-  if(tid+1 == n_threads) end = n*n; // last block may be larger
+  if(tid+1 == n_threads) end = n*n; // last region may be larger
   Stack* st = stack(n*n);
   for(int i = start; i < end; ++i) {
     Site *s = &a[i];
@@ -145,25 +146,22 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
 }
 
 /**
- * @brief merges clusters along the bottom row of each thread region
- * 
- * THOUGHT: only sites on thread border need to be stored in cluster sites array and updated (will also decrease memory requirements)
+ * @brief merges clusters along the bottom row of each thread region.
+ *        Update cluster information and maintains a list of sites belonging to the cluster that are on a thread boundary.
+ *        Only sites on a thread boundary need to have latest cluster information for future joins.
  */
 static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
   for(int i = 0; i < n_threads; ++i) {
     int row_end = (i+1)*n*(n/n_threads);
     if(i+1 == n_threads) row_end = n*n;
     int row_start = row_end-n;
-    for(int i = row_start; i < row_end; ++i) { // loop along row
+    for(int i = row_start; i < row_end; ++i) { // loop along bottom row of region
       Site *s = &a[i];
       Cluster *sc = s->cluster;
       if(!sc) continue;
       Site *nb = bottom_neighbour(a, b, n, s);
       if(!nb) continue;
       Cluster *nc = nb->cluster;
-
-      // printf("S: %d (%d), NB: %d (%d)\n", i, sc->size, nb->r*n+nb->c, nc->size);
-
       // combine two clusters into sc
       sc->size += nc->size;
       for(int i = 0; i < n; ++i) {
@@ -196,7 +194,7 @@ static void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max
   for(int i = 0; i < n_threads; ++i) {
     for(int j = 0; j < cpa[i].size; ++j) {
       Cluster *cl = cpa[i].cls[j];
-      if(cl->id == -1) continue;
+      if(cl->id == -1) continue; // this cluster was combined into another
       nm++;
       if(cl->size > m) m = cl->size;
       if(cl->height == n) rp = 1;
@@ -212,7 +210,15 @@ static void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max
 }
 
 /**
- * USAGE: ./percolate [-b | -s] [-r SEED] [-p RESULTS_FILENAME] [[-f LATTICE_FILENAME] | [N PROBABILITY]] [N_THREADS]
+ * USAGE: ./percolate [-s | -b] [-r SEED] [-p RESULTS_FILENAME] [[-f LATTICE_FILENAME] | [N PROBABILITY]] [N_THREADS]
+ * 
+ * [-s | -b] site or bond percolation, default site
+ * [-r SEED] number to seed srand, default time(NULL)
+ * [-p RESULTS_FILENAME] file to append the results of the percolation
+ * [-f LATTICE_FILENAME] file to scan lattice from
+ * [N PROBABILITY] size of lattice and probability of site occupation or bond
+ * [N_THREADS] number of threads to utilise
+ * 
  */
 int main(int argc, char *argv[])
 {
@@ -224,7 +230,7 @@ int main(int argc, char *argv[])
   // options
   short site = 1, verbose = 1;
   char* fname = NULL, *rname = NULL;
-  unsigned int seed = time(NULL); // default uniqiue seed
+  unsigned int seed = time(NULL); // default unique seed
 
   // positional arguments
   int n;
@@ -310,7 +316,7 @@ int main(int argc, char *argv[])
     exit(EXIT_SUCCESS);
   }
 
-  // int est_num_clusters;
+  // int est_num_clusters; // could be used with realloc instead of worse-case memory allocation
   // int est_cluster_size;
   int max_clusters = n % 2 == 0 ? n*n/2 : (n-1)*(n-1)/2+1;
 
@@ -367,7 +373,11 @@ int main(int argc, char *argv[])
       printf("Error.\n");
       exit(EXIT_SUCCESS);
     }
-    fprintf(f, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", n, (int)(p*100), n_threads, seed, num, max, rperc, cperc, (int)(perc_time*10e9), (int)(join_time*10e9), (int)(total*10e9));
+    fprintf(
+      f,
+      "%d,%f,%d,%d,%d,%d,%d,%d,%f,%f,%f\n",
+      n, p, n_threads, seed, num, max, rperc, cperc, perc_time, join_time, total
+    );
     fclose(f);
   }
   exit(EXIT_SUCCESS);
