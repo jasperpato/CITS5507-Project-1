@@ -361,13 +361,13 @@ int main(int argc, char *argv[])
     printf("Col percolation: %s\n\n", cperc ? "True" : "False");
   }
 
-  if(rname && !fname) {
+  if(rname && !fname) { // write results as integers to results file
     FILE* f = fopen(rname, "a");
     if(!f) {
       printf("Error.\n");
       exit(EXIT_SUCCESS);
     }
-    fprintf(f, "%d,%f,%d,%d,%d,%d,%d,%d,%f,%f,%f\n", n, p, n_threads, seed, num, max, rperc, cperc, perc_time, join_time, total);
+    fprintf(f, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", n, (int)(p*100), n_threads, seed, num, max, rperc, cperc, (int)(perc_time*10e9), (int)(join_time*10e9), (int)(total*10e9));
     fclose(f);
   }
   exit(EXIT_SUCCESS);
