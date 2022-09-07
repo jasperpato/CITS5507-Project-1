@@ -20,10 +20,12 @@
 
 #define ARG_LENGTH 40
 
+#define RESULTS_FILE "../test/results.csv"
+
 /**
- * USAGE: ./driver RESULTS_FILENAME
+ * USAGE: ./driver [RESULTS_FILENAME]
  * 
- * Loops through n, p and n_threads values and calls percolate infinitely
+ * Loops through n, p and n_threads values and calls percolate program infinitely, which appends results to file.
  */
 int main(int argc, char *argv[]) {
   srand(time(NULL));
@@ -33,7 +35,7 @@ int main(int argc, char *argv[]) {
       if(err) break;
       for(int pi = (int)(P_MIN*P_RES); pi <= (int)(P_MAX*P_RES); pi+=(int)(P_STEP*P_RES)) {
         float p = (float)pi/P_RES;
-        int seed = rand();
+        int seed = rand(); // same seed for each n_threads to make sure the results are identical
         if(err) break;
         for(int nt = NT_MIN; nt <= NT_MAX; nt+=NT_STEP) {
           int pid = fork();
@@ -45,8 +47,8 @@ int main(int argc, char *argv[]) {
             char *args[] = {"percolate", "-v", "-p", NULL, "-r", NULL, NULL, NULL, NULL, NULL};
             args[3] = malloc(ARG_LENGTH*sizeof(char));
             for(int i = 5; i < 9; ++i) args[i] = malloc(ARG_LENGTH*sizeof(char));
-            sprintf(args[3], "%s", argv[1]);
-            sprintf(args[5], "%d", seed); // same seed for all n_thread values
+            sprintf(args[3], "%s", argc > 1 ? argv[1] : RESULTS_FILE);
+            sprintf(args[5], "%d", seed); // same seed for all n_threads
             sprintf(args[6], "%d", n);
             sprintf(args[7], "%f", p);
             sprintf(args[8], "%d", nt);
@@ -55,8 +57,7 @@ int main(int argc, char *argv[]) {
           }
           else {
             int status;
-            wait(&status);
-            // sleep(1); // if n < 500ish, wait for new second for srand()
+            wait(&status); // wait for child
           }
         }
       }

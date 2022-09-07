@@ -1,3 +1,11 @@
+'''
+Reads results file and graphs all n_threads on a plot. Keeps either n or p constant as specified.
+
+USAGE: python3 results.py [-n N | -p P] [--fname RESULTS_FILE]
+       N keep lattice size constant at N
+       P keep probability constant at P
+'''
+
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,6 +13,9 @@ from argparse import ArgumentParser
 
 P_RES = 1e-3
 
+'''
+Returns a list of dictionaries - one for each row in csvfile
+'''
 def read_file(fname):
   rows = []
   with open(fname, 'r') as f:
@@ -16,6 +27,9 @@ def read_file(fname):
       rows.append(row)
   return rows
 
+'''
+Gather data from rows that match the const (could be n or p)
+'''
 def get_data(results, const, c):
   x = 'p' if c == 'n' else 'n'
   data = tuple({} for _ in range(4))
@@ -26,7 +40,10 @@ def get_data(results, const, c):
       data[t][row[x]].append(row['total_time'])
   return data
 
-def remove_outliers(data, stds=1):
+'''
+Remove total_times that are further than (stds * std) from mean
+'''
+def remove_outliers(data, stds):
   for t in range(4):
     for y, xs in data[t].items():
       new = []
@@ -34,17 +51,35 @@ def remove_outliers(data, stds=1):
       for i, x in enumerate(xs):
         if abs(x-mean) < stds*std: new.append(x)
       data[t][y] = new
-    
+
+'''
+Replace lists of data with their mean to be graphed
+'''    
 def means(data):
+  lens, count, min_len, max_len = 0, 0, 0, 0
+  
   m = tuple({} for _ in range(4))
   for t in range(4):
     for k, v in data[t].items():
+      lens += len(v)
+      if len(v) < min_len or min_len == 0: min_len = len(v)
+      if len(v) > max_len: max_len = len(v)
+      count += 1
       m[t][k] = np.mean(v)
+
+  print('Data points per parameter set:')
+  print(f'Min {min_len}')
+  print(f'Max {max_len}')
+  print(f'Avg {lens/count}')
+
   return m
 
+'''
+Graph all n_threads on one axis, keeping either n or p constant
+'''
 def graph(results, const, c):
   data = get_data(results, const, c)
-  remove_outliers(data)
+  remove_outliers(data, 1.5)
   m = means(data)
 
   for t in range(4):
@@ -57,8 +92,8 @@ def graph(results, const, c):
 
 if __name__ == '__main__':
   a = ArgumentParser()
-  for p in ('fname', '-n', '-p'):
-    a.add_argument(p)
+  a.add_argument('--fname', default='results.csv')
+  for p in ('-n', '-p'): a.add_argument(p)
   args = a.parse_args()
   
   results = read_file(args.fname)
