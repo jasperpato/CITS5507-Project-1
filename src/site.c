@@ -12,7 +12,7 @@ Site* site_array(int n, float p)
     sites[i].r = i/n;
     sites[i].c = i%n;
     if(p > 0) {
-      if((double)rand()/(double)RAND_MAX < p) sites[i].occupied = 1;
+      if((double)rand()/RAND_MAX < p) sites[i].occupied = 1;
       else sites[i].occupied = 0; 
     }
   }

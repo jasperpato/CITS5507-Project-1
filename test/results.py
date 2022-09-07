@@ -1,4 +1,6 @@
 import csv
+import numpy as np
+import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 
 P_RES = 1e-3
@@ -14,29 +16,52 @@ def read_file(fname):
       rows.append(row)
   return rows
 
-def get_avgs(results, n, p, n_threads):
-  avgs = [0 for _ in range(7)]
-  count = 0
+def get_data(results, const, c):
+  x = 'p' if c == 'n' else 'n'
+  data = tuple({} for _ in range(4))
   for row in results:
-    if((n is None or n == row['n']) and (p is None or abs(p-row['p']) < P_RES) and (n_threads is None or n_threads == row['n_threads'])):
-      for i, v in enumerate(('num_clusters', 'max_cluster_size', 'rperc', 'cperc', 'perc_time', 'join_time', 'total_time')):
-        avgs[i] += row[v]
-      count += 1
-  if count:
-    for i in range(7): avgs[i] /= count
-  return avgs, count
+    t = row['n_threads']-1
+    if abs(const-row[c]) < P_RES:
+      if row[x] not in data[t]: data[t][row[x]] = []
+      data[t][row[x]].append(row['total_time'])
+  return data
+
+def remove_outliers(data, stds=1):
+  for t in range(4):
+    for y, xs in data[t].items():
+      new = []
+      mean, std = np.mean(xs), np.std(xs)
+      for i, x in enumerate(xs):
+        if abs(x-mean) < stds*std: new.append(x)
+      data[t][y] = new
+    
+def means(data):
+  m = tuple({} for _ in range(4))
+  for t in range(4):
+    for k, v in data[t].items():
+      m[t][k] = np.mean(v)
+  return m
+
+def graph(results, const, c):
+  data = get_data(results, const, c)
+  remove_outliers(data)
+  m = means(data)
+
+  for t in range(4):
+    plt.plot(m[t].keys(), m[t].values(), label=f'{t+1}')
+  plt.xlabel('p' if c == 'n' else 'n')
+  plt.ylabel('Total time (s)')
+  plt.title(f"{c} = {const}")
+  plt.legend(title='Num threads')
+  plt.show(block=True)
 
 if __name__ == '__main__':
   a = ArgumentParser()
-  for v in ('--n', '--p', '--n_threads', 'fname'):
-    a.add_argument(v)
+  for p in ('fname', '-n', '-p'):
+    a.add_argument(p)
   args = a.parse_args()
   
   results = read_file(args.fname)
 
-  n = int(args.n) if args.n else None
-  p = float(args.p) if args.p else None
-  n_threads = int(args.n_threads) if args.n_threads else None
-
-  avgs, count = get_avgs(results, n, p, n_threads)
-  print(avgs, count)
+  if(args.n): graph(results, int(args.n), 'n')
+  elif(args.p): graph(results, float(args.p), 'p')

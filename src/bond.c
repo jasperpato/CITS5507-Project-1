@@ -12,13 +12,11 @@ Bond* bond(int n, float p)
   b->v = calloc(n*n, sizeof(short));
   b->h = calloc(n*n, sizeof(short));
   if(!b->v || !b->h) return NULL;
-  for(int r = 0; r < n; ++r) {
-    for(int c = 0; c < n; ++c) {
-      if((double)rand()/(double)RAND_MAX < p) b->v[r*n+c] = 1;
-      else b->v[r*n+c] = 0; 
-      if((double)rand()/(double)RAND_MAX < p) b->h[r*n+c] = 1;
-      else b->h[r*n+c] = 0;
-      }
+  for(int i = 0; i < n*n; ++i) {
+    if((double)rand()/RAND_MAX < p) b->v[i] = 1;
+    else b->v[i] = 0; 
+    if((double)rand()/RAND_MAX < p) b->h[i] = 1;
+    else b->h[i] = 0;
   }
   return b;
 }

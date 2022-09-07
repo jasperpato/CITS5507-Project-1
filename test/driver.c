@@ -5,7 +5,7 @@
 #include <time.h>
 
 #define N_MIN 100
-#define N_MAX 5000
+#define N_MAX 3000
 #define N_STEP 100
 
 #define P_MIN 0
@@ -61,7 +61,6 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-    break;
   }
-  exit(EXIT_SUCCESS);
+  // exit(EXIT_SUCCESS);
 }

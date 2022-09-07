@@ -290,8 +290,7 @@ int main(int argc, char *argv[])
       }
       print_bond(b, n);
     }
-  }
-  else { // initialise random lattice
+  } else { // initialise random lattice
     if(argc - optind < 2) {
       printf("Invalid arguments.\n");
       exit(EXIT_SUCCESS);
@@ -334,7 +333,8 @@ int main(int argc, char *argv[])
   }
 
   double init = omp_get_wtime();
-  if(verbose) printf("\n Init time: %9.6f\n", init-start);
+  double init_time = init-start;
+  if(verbose) printf("\n Init time: %9.6f\n", init_time);
 
   #pragma omp parallel
   {
@@ -356,11 +356,13 @@ int main(int argc, char *argv[])
   int num = 0, max = 0;
   short rperc = 0, cperc = 0;
   scan_clusters(cpa, n, n_threads, &num, &max, &rperc, &cperc);
-  if(verbose) printf(" Scan time: %9.6f\n", omp_get_wtime()-join);
+  double scan_time = omp_get_wtime()-join;
+  if(verbose) printf(" Scan time: %9.6f\n", scan_time);
 
-  double total = omp_get_wtime()-start;
+  double total_time = omp_get_wtime()-start;
+  
   if(verbose) {
-    printf("Total time: %9.6f\n", total);
+    printf("Total time: %9.6f\n", total_time);
     printf("\n   Num clusters: %d\n", num);
     printf("       Max size: %d\n", max);
     printf("Row percolation: %s\n", rperc ? "True" : "False");
@@ -375,8 +377,8 @@ int main(int argc, char *argv[])
     }
     fprintf(
       f,
-      "%d,%f,%d,%d,%d,%d,%d,%d,%f,%f,%f\n",
-      n, p, n_threads, seed, num, max, rperc, cperc, perc_time, join_time, total
+      "%d,%f,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f\n",
+      n, p, n_threads, seed, num, max, rperc, cperc, init_time, perc_time, join_time, scan_time, total_time
     );
     fclose(f);
   }
