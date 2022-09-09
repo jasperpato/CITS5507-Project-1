@@ -49,7 +49,7 @@ def remove_outliers(data, stds):
       new = []
       mean, std = np.mean(xs), np.std(xs)
       for i, x in enumerate(xs):
-        if abs(x-mean) < stds*std: new.append(x)
+        if abs(x-mean) <= stds*std: new.append(x)
       data[t][y] = new
 
 '''
