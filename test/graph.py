@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 
 P_RES = 1e-3
+N_THREADS = 4
 
 '''
 Returns a list of dictionaries - one for each row in csvfile
@@ -34,7 +35,7 @@ Gather data from rows that match the const (could be n or p)
 '''
 def get_data(results, const, c):
   x = 'p' if c == 'n' else 'n'
-  data = tuple({} for _ in range(4))
+  data = tuple({} for _ in range(N_THREADS))
   for row in results:
     t = row['n_threads']-1
     if abs(const-row[c]) < P_RES:
@@ -63,8 +64,8 @@ Replace lists of data with their mean to be graphed
 def means(data):
   lens, count, min_len, max_len = 0, 0, 0, 0
   
-  m = tuple({} for _ in range(4))
-  for t in range(4):
+  m = tuple({} for _ in range(N_THREADS))
+  for t in range(N_THREADS):
     for k, v in data[t].items():
       lens += len(v)
       if len(v) < min_len or min_len == 0: min_len = len(v)
@@ -84,7 +85,7 @@ def graph(results, const, c):
   remove_outliers(data)
   m = means(data)
 
-  for t in range(4):
+  for t in range(N_THREADS):
     plt.plot(m[t].keys(), m[t].values(), label=f'{t+1}')
   plt.xlabel('p' if c == 'n' else 'n')
   plt.ylabel('Total time (s)')
@@ -95,10 +96,12 @@ def graph(results, const, c):
 if __name__ == '__main__':
   a = ArgumentParser()
   a.add_argument('--fname', default='results.csv')
+  a.add_argument('--n_threads', default=4, type=int)
   for p in ('-n', '-p'): a.add_argument(p)
   args = a.parse_args()
   
   results = read_file(args.fname)
-
+  N_THREADS = args.n_threads
+  
   if(args.n): graph(results, int(args.n), 'n')
   elif(args.p): graph(results, float(args.p), 'p')
