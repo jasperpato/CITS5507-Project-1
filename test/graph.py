@@ -1,13 +1,14 @@
 '''
 Reads results file and graphs all n_threads on a plot. Keeps either n or p constant as specified.
 
-USAGE: python3 results.py [-n N | -p P] [--fname RESULTS_FILE]
+USAGE: python3 graph.py [-n N | -p P] [--fname RESULTS_FILE]
 
 N keep lattice size constant at N
 P keep probability constant at P
 '''
 
 import csv
+from tkinter import E
 import numpy as np
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
@@ -44,14 +45,17 @@ def get_data(results, const, c):
 '''
 Remove total_times that are further than (stds * std) from mean
 '''
-def remove_outliers(data, stds):
+def remove_outliers(data, stds=4):
+  count = 0
   for t in range(4):
     for y, xs in data[t].items():
       new = []
       mean, std = np.mean(xs), np.std(xs)
       for i, x in enumerate(xs):
         if abs(x-mean) <= stds*std: new.append(x)
+        else: count += 1
       data[t][y] = new
+  print(f'Removed data points (stds={stds}): {count}')
 
 '''
 Replace lists of data with their mean to be graphed
@@ -68,10 +72,7 @@ def means(data):
       count += 1
       m[t][k] = np.mean(v)
 
-  print('Data points per parameter set:')
-  print(f'Min {min_len}')
-  print(f'Max {max_len}')
-  print(f'Avg {lens/count}')
+  print(f'Minimum data points per parameter set: {min_len}')
 
   return m
 
@@ -80,7 +81,7 @@ Graph all n_threads on one axis, keeping either n or p constant
 '''
 def graph(results, const, c):
   data = get_data(results, const, c)
-  remove_outliers(data, 1.5)
+  remove_outliers(data)
   m = means(data)
 
   for t in range(4):

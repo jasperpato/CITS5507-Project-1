@@ -18,20 +18,38 @@ make
 - [-p RESULTS_FILENAME] file to append the results of the percolation
 - [-f LATTICE_FILENAME] file to scan lattice from
 - [N PROBABILITY] size of lattice and probability of site occupation or bond
-- [N_THREADS] number of threads to utilise
+- [N_THREADS] number of threads to utilise, default 1
 
 Examples:
 
-- ./percolate -s 500 0.4
-- ./percolate -s 500 0.4 2
+- Most common usage (N = 500, P = 0.4, N_THREADS= 1, then 2)
 
-- ./percolate -b -f ../lattice/bond20.txt 20
-- ./percolate -b -f ../lattice/bond20.txt 20 4
+  ```console
+  ./percolate -s 500 0.4
 
-- ./percolate -r 999 10 0.4
-- ./percolate -r 999 10 0.4 2
+  ./percolate -b 500 0.4 2
+  ```
 
-- ./percolate -v -p ../test/results.csv 100 0.1
+- Load lattice from file
+
+  ```console
+  ./percolate -b -f ../lattice/bond20.txt 20 1
+
+  ./percolate -b -f ../lattice/bond20.txt 20 4
+  ```
+
+- Same seed for identical results
+
+  ```console
+  ./percolate -r 999 10 0.4
+
+  ./percolate -r 999 10 0.4 3
+  ```
+
+- Silence printing and append results to file
+  ```console
+  ./percolate -v -p ../test/results.csv 100 0.1
+  ```
 
 To generate results:
 
@@ -45,7 +63,7 @@ To graph results:
 
 ```console
 cd test
-python3 results.py [-n N | -p P] [--fname RESULTS_FILE]
+python3 graph.py [-n N | -p P] [--fname RESULTS_FILE]
 ```
 
 - [-n N] keep n constant at N and graph all N_THREADS
@@ -54,5 +72,8 @@ python3 results.py [-n N | -p P] [--fname RESULTS_FILE]
 
 Examples:
 
-- python3 results.py -n 2500
-- python3 results.py -p 0.4
+```console
+python3 graph.py -n 2500
+
+python3 graph.py -p 0.4
+```
