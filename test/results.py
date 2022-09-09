@@ -2,8 +2,9 @@
 Reads results file and graphs all n_threads on a plot. Keeps either n or p constant as specified.
 
 USAGE: python3 results.py [-n N | -p P] [--fname RESULTS_FILE]
-       N keep lattice size constant at N
-       P keep probability constant at P
+
+N keep lattice size constant at N
+P keep probability constant at P
 '''
 
 import csv
