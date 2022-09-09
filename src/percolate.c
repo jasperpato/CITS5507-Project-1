@@ -245,21 +245,21 @@ int main(int argc, char *argv[])
     else if(c == 'f') {         // scan lattice from file
       if(!optarg) {
         printf("Error.\n");
-        exit(EXIT_SUCCESS);
+        exit(EXIT_FAILURE);
       }
       fname = optarg;
     }
     else if(c == 'p') {         // write results to file
       if(!optarg) {
         printf("Error.\n");
-        exit(EXIT_SUCCESS);
+        exit(EXIT_FAILURE);
       }
       rname = optarg;
     }
     else if(c == 'r') {         // seed rand with constant
       if(!optarg) {
         printf("Error.\n");
-        exit(EXIT_SUCCESS);
+        exit(EXIT_FAILURE);
       }
       seed = atoi(optarg);
     }
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
   if(fname) { // scan lattice from file
     if(argc - optind < 1) {
       printf("Invalid arguments.\n");
-      exit(EXIT_SUCCESS);
+      exit(EXIT_FAILURE);
     }
     n = atoi(argv[optind++]);
     if(argc - optind > 0) n_threads = atoi(argv[optind]);
@@ -275,26 +275,26 @@ int main(int argc, char *argv[])
       a = file_site_array(fname, n);
       if(!a) {
         printf("Error.\n");
-        exit(EXIT_SUCCESS);
+        exit(EXIT_FAILURE);
       }
       print_site_array(a, n);
     } else {
       b = file_bond(fname, n);
       if(!b) {
         printf("Error.\n");
-        exit(EXIT_SUCCESS);
+        exit(EXIT_FAILURE);
       }
       a = site_array(n, -1.0);
       if(!a) {
         printf("Memory error.\n");
-        exit(EXIT_SUCCESS);
+        exit(EXIT_FAILURE);
       }
       print_bond(b, n);
     }
   } else { // initialise random lattice
     if(argc - optind < 2) {
       printf("Invalid arguments.\n");
-      exit(EXIT_SUCCESS);
+      exit(EXIT_FAILURE);
     }
     n = atoi(argv[optind++]);
     p = atof(argv[optind++]);
@@ -313,7 +313,7 @@ int main(int argc, char *argv[])
   }
   if(n < 1 || n_threads < 1) {
     printf("Invalid arguments.\n");
-    exit(EXIT_SUCCESS);
+    exit(EXIT_FAILURE);
   }
 
   // int est_num_clusters; // could be used with realloc instead of worse-case memory allocation
@@ -374,7 +374,7 @@ int main(int argc, char *argv[])
     FILE* f = fopen(rname, "a");
     if(!f) {
       printf("Error.\n");
-      exit(EXIT_SUCCESS);
+      exit(EXIT_FAILURE);
     }
     fprintf(
       f,
