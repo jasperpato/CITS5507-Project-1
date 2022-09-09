@@ -210,9 +210,10 @@ static void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max
 }
 
 /**
- * USAGE: ./percolate [-s | -b] [-r SEED] [-p RESULTS_FILENAME] [[-f LATTICE_FILENAME] | [N PROBABILITY]] [N_THREADS]
+ * USAGE: ./percolate [-s | -b] [-v] [-r SEED] [-p RESULTS_FILENAME] [[-f LATTICE_FILENAME] | [N PROBABILITY]] [N_THREADS]
  * 
  * [-s | -b] site or bond percolation, default site
+ * [-v] silence printing
  * [-r SEED] number to seed srand, default time(NULL)
  * [-p RESULTS_FILENAME] file to append the results of the percolation
  * [-f LATTICE_FILENAME] file to scan lattice from
