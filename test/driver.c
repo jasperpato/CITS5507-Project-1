@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <time.h>
 
-#define N_MIN 100
+#define N_MIN 2000
 #define N_MAX 3000
 #define N_STEP 100
 
@@ -24,7 +24,6 @@
 
 #define RESULTS_FILE "results.csv"
 
-extern int errno ;
 
 /**
  * USAGE: ./driver [-f RESULTS_FILENAME] [-l LOG_FILENAME]
@@ -35,7 +34,7 @@ int main(int argc, char *argv[]) {
   srand(time(NULL));
   int opt;
   char* resfile_name = NULL;
-  FILE *logfile = NULL;
+  char* logfile_name = NULL;
 
   while((opt = getopt(argc, argv, "f:l:")) != -1) {
     switch(opt) {
@@ -43,7 +42,7 @@ int main(int argc, char *argv[]) {
         resfile_name = optarg;
         break;
       case 'l':
-        logfile = fopen(optarg, "a");
+        logfile_name = optarg;
         break;
       default:
         fprintf(stderr, "Usage: [-f RESULTS_FILENAME] [-l LOG_FILENAME]");
@@ -58,13 +57,8 @@ int main(int argc, char *argv[]) {
         for(int nt = NT_MIN; nt <= NT_MAX; nt+=NT_STEP) {
           int pid = fork();
 
-          if(pid == -1) {
-            char* errstr = strerror(errno);
-            fprintf(stderr, "Error: %s", errstr);
-            if (logfile != NULL) {
-              fprintf(logfile, "Error: %s with parameters N=%i, P=%f, NT=%i\n", errstr, n, p, nt);
-            }
-            break;
+          if(pid == -1) { 
+            exit(EXIT_FAILURE);
           }
 
           else if(pid == 0) { // child
@@ -77,16 +71,22 @@ int main(int argc, char *argv[]) {
             sprintf(args[7], "%f", p);
             sprintf(args[8], "%d", nt);
             execv("../src/percolate", args);
-            exit(EXIT_FAILURE);
+            exit(EXIT_SUCCESS);
           }
 
           else {
             int status;
             wait(&status); // wait for child
+            if (!WIFEXITED(status) && logfile_name != NULL) {
+              FILE* logfile = fopen(logfile_name, "a");
+              fprintf(logfile, "Error: %s with parameters N=%i, P=%f, NT=%i\n", strerror(status), n, p, nt);
+              fclose(logfile);
+            }
           }
         }
       }
     }
   }
-  // exit(EXIT_SUCCESS);
+  
+  exit(EXIT_SUCCESS);
 }
