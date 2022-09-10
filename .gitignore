@@ -4,5 +4,5 @@
 **/obj/**
 **/percolate
 **/params
-test/driver
-test/log.txt
+**/driver
+**/log.txt
