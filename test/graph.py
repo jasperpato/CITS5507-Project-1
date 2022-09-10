@@ -33,14 +33,14 @@ def read_file(fname):
 '''
 Gather data from rows that match the const (could be n or p)
 '''
-def get_data(results, const, c):
+def get_data(results, const, c, column):
   x = 'p' if c == 'n' else 'n'
   data = tuple({} for _ in range(N_THREADS))
   for row in results:
     t = row['n_threads']-1
     if abs(const-row[c]) < P_RES:
       if row[x] not in data[t]: data[t][row[x]] = []
-      data[t][row[x]].append(row['total_time'])
+      data[t][row[x]].append(row[column])
   return data
 
 '''
@@ -80,8 +80,8 @@ def means(data):
 '''
 Graph all n_threads on one axis, keeping either n or p constant
 '''
-def graph(results, const, c):
-  data = get_data(results, const, c)
+def graph(results, const, c, column):
+  data = get_data(results, const, c, column)
   remove_outliers(data)
   m = means(data)
 
@@ -97,11 +97,14 @@ if __name__ == '__main__':
   a = ArgumentParser()
   a.add_argument('--fname', default='results.csv')
   a.add_argument('--n_threads', default=4, type=int)
+  a.add_argument('--column', default='total_time', help='Type of time to track. ' +
+                 'Options = {init_time, perc_time, join_time, scan_time, total_time}')
   for p in ('-n', '-p'): a.add_argument(p)
   args = a.parse_args()
   
   results = read_file(args.fname)
+  print(results[0].keys())
   N_THREADS = args.n_threads
   
-  if(args.n): graph(results, int(args.n), 'n')
-  elif(args.p): graph(results, float(args.p), 'p')
+  if(args.n): graph(results, int(args.n), 'n', args.column)
+  elif(args.p): graph(results, float(args.p), 'p', args.column)
