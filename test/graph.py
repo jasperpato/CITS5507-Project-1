@@ -86,29 +86,30 @@ def get_means(data, n_threads):
 '''
 Graph all n_threads on one axis, keeping either n or p constant
 '''
-def graph(results, n_threads, const, c, time):
+def graph(results, n_threads, const, c, time, n_squared=False):
   data = get_data(results, n_threads, const, c, time)
   remove_outliers(data, n_threads)
   m = get_means(data, n_threads)
 
   for t in range(n_threads):
-    plt.plot(m[t].keys(), m[t].values(), label=f'{t+1}')
-  plt.xlabel('Probability P' if c == 'n' else 'Lattice length N')
+    plt.plot([k**2 for k in m[t].keys()], m[t].values(), label=f'{t+1}')
+  plt.xlabel('Probability P' if c == 'n' else ('Lattice size N*N' if n_squared else 'Lattice length N'))
   plt.ylabel('Mean total time (s)')
-  plt.title(f"{'Probability P' if c == 'p' else 'Lattice length N'} = {const}")
+  plt.title(f"{'Probability P' if c == 'p' else ('Lattice size N*N' if n_squared else 'Lattice length N')} = {const}")
   plt.legend(title='Num threads')
   plt.show(block=True)
 
 if __name__ == '__main__':
   a = ArgumentParser()
   a.add_argument('--fname', default='results.csv')
-  a.add_argument('--n_threads', default=4, type=int)
+  a.add_argument('--n-threads', default=4, type=int)
   a.add_argument('--time', default='total_time', help='Type of time to track. Options = {init_time, perc_time, join_time, scan_time, total_time}')
   a.add_argument('-n', type=int)
   a.add_argument('-p', type=float)
+  a.add_argument('--n-squared', action='store_true')
   args = a.parse_args()
 
   results = read_file(args.fname)
   
   if(args.n): graph(results, args.n_threads, args.n, 'n', args.time)
-  elif(args.p): graph(results, args.n_threads, args.p, 'p', args.time)
+  elif(args.p): graph(results, args.n_threads, args.p, 'p', args.time, args.n_squared)
