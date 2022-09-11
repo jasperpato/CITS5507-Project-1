@@ -18,6 +18,17 @@
 #include "../include/bond.h"
 #include "../include/cluster.h"
 
+static int start_index(int n, int n_threads, int tid)
+{
+  return tid < n_threads - (n % n_threads) ? n*tid*(n/n_threads) : n*tid*(n/n_threads+1); // incorrect for now
+  // return tid*n*(n/n_threads);
+}
+
+static int end_index(int n, int n_threads, int tid)
+{
+  return tid+1 == n_threads ? n*n : (tid+1)*n*(n/n_threads); // incorrect for now
+}
+
 /**
  * @brief Check if a site has at least one bond to a neighbour (and can therefore be the start of a cluster)
  *        Returns true even if neighbour is across the thread boundary (because the clusters need to be joined later).
@@ -44,9 +55,8 @@ static short has_neighbours(Bond* b, int n, Site* s)
  */
 static short on_border(int n, int idx, int n_threads) {
   for(int i = 0; i < n_threads; ++i) {
-    int start = i*n*(n/n_threads); // region boundaries
-    int end = (i+1)*n*(n/n_threads);
-    if(i+1 == n_threads) end = n*n;
+    int start = start_index(n, n_threads, i); // region boundaries
+    int end = end_index(n, n_threads, i);
     if((idx >= start && idx < start+n) || (idx >= end-n && idx < end)) return 1;
   }
   return 0;
@@ -134,8 +144,11 @@ static void DFS(Site* a, Bond* b, int n, int n_threads, Stack* st, int start, in
  */
 static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, short tid)
 {
-  int start = tid*n*(n/n_threads);
-  int end = (tid+1)*n*(n/n_threads);
+  int start = start_index(n, n_threads, tid);
+  int end = end_index(n, n_threads, tid);
+
+  printf("Thread %d start %d end %d\n", tid, start, end);
+
   if(tid+1 == n_threads) end = n*n; // last region may be extended to reach end of lattice
   Stack* st = stack(n*n);
   for(int i = start; i < end; ++i) {
@@ -160,8 +173,7 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
  */
 static void join_clusters(Site* a, Bond* b, int n, int n_threads) {
   for(int i = 0; i < n_threads; ++i) {
-    int row_end = (i+1)*n*(n/n_threads);
-    if(i+1 == n_threads) row_end = n*n;
+    int row_end = end_index(n, n_threads, i);
     int row_start = row_end-n;
     for(int i = row_start; i < row_end; ++i) { // loop along bottom row of region
       Site *s = &a[i];
