@@ -92,7 +92,7 @@ def graph(results, n_threads, const, c, time, n_squared=False):
   m = get_means(data, n_threads)
 
   for t in range(n_threads):
-    plt.plot([k**2 for k in m[t].keys()], m[t].values(), label=f'{t+1}')
+    plt.plot([k**2 for k in m[t].keys()] if n_squared else m[t].keys(), m[t].values(), label=f'{t+1}')
   plt.xlabel('Probability P' if c == 'n' else ('Lattice size N*N' if n_squared else 'Lattice length N'))
   plt.ylabel('Mean total time (s)')
   plt.title(f"{'Probability P' if c == 'p' else ('Lattice size N*N' if n_squared else 'Lattice length N')} = {const}")
