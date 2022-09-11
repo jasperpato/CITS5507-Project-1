@@ -127,11 +127,11 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
 {
   int start = tid*n*(n/n_threads);
   int end = (tid+1)*n*(n/n_threads);
-  if(tid+1 == n_threads) end = n*n; // last region may be larger
+  if(tid+1 == n_threads) end = n*n; // last region may be extended to reach end of lattice
   Stack* st = stack(n*n);
   for(int i = start; i < end; ++i) {
     Site *s = &a[i];
-    if(!s->seen && ((!b && s->occupied) || (b && has_neighbours(b, n, s)))) {
+    if(!s->seen && ((!b && s->occupied) || (b && has_neighbours(b, n, s)))) { // if unseen and will form a cluster
       s->seen = 1;
       s->cluster = cluster(n, n_threads, i/n, i%n);
       Cluster *sc = s->cluster;
@@ -142,7 +142,6 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
       DFS(a, b, n, n_threads, st, start, end);
     }   
   }
-  // free_stack(st);
 }
 
 /**
@@ -199,14 +198,12 @@ static void scan_clusters(CPArray* cpa, int n, int n_threads, int *num, int *max
       if(cl->size > m) m = cl->size;
       if(cl->height == n) rp = 1;
       if(cl->width == n) cp = 1;
-      // free_cluster(cl);
     }
   }
   *rperc = rp;
   *cperc = cp;
   *num = nm;
   *max = m;
-  // free_cparray(cpa, n_threads);
 }
 
 /**
@@ -350,9 +347,6 @@ int main(int argc, char *argv[])
   double join = omp_get_wtime();
   double join_time = join-pt;
   if(verbose) printf(" Join time: %9.6f\n", join_time);
-  
-  // free(a);
-  // if(b) free_bond(b);
 
   int num = 0, max = 0;
   short rperc = 0, cperc = 0;
