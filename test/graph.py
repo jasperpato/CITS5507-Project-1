@@ -1,4 +1,12 @@
 '''
+CITS5507 HPC PROJECT 1
+LATTICE PERCOLATION IN PARALLEL
+
+Jasper Paterson 22736341
+Allen Antony 22706998
+'''
+
+'''
 Reads results file and graphs all n_threads on a plot. Keeps either n or p constant as specified.
 
 USAGE: python3 graph.py [-n N | -p P] [--fname RESULTS_FILE]
@@ -8,7 +16,6 @@ P keep probability constant at P
 '''
 
 import csv
-# from tkinter import E
 import numpy as np
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
