@@ -18,15 +18,20 @@
 #include "../include/bond.h"
 #include "../include/cluster.h"
 
+/**
+ * @return int start index of the region of the lattice allocated to this thread. Allocates rows evenly to each thread.
+ */
 static int start_index(int n, int n_threads, int tid)
 {
-  return tid < n_threads - (n % n_threads) ? n*tid*(n/n_threads) : n*tid*(n/n_threads+1); // incorrect for now
-  // return tid*n*(n/n_threads);
+  return tid < n_threads - (n % n_threads) ? n*tid*(n/n_threads) : n*(n_threads-n%n_threads)*(n/n_threads) + n*(tid-(n_threads-n%n_threads))*(n/n_threads+1);
 }
 
+/**
+ * @return int end index of the region of the lattice allocated to this thread. Allocates rows evenly to each thread.
+ */
 static int end_index(int n, int n_threads, int tid)
 {
-  return tid+1 == n_threads ? n*n : (tid+1)*n*(n/n_threads); // incorrect for now
+  return tid < n_threads - (n % n_threads) ? n*(tid+1)*(n/n_threads) : n*(n_threads-n%n_threads)*(n/n_threads) + n*((tid+1)-(n_threads-n%n_threads))*(n/n_threads+1);
 }
 
 /**
@@ -146,9 +151,6 @@ static void percolate(Site* a, Bond* b, int n, int n_threads, CPArray* cpa, shor
 {
   int start = start_index(n, n_threads, tid);
   int end = end_index(n, n_threads, tid);
-
-  printf("Thread %d start %d end %d\n", tid, start, end);
-
   if(tid+1 == n_threads) end = n*n; // last region may be extended to reach end of lattice
   Stack* st = stack(n*n);
   for(int i = start; i < end; ++i) {
