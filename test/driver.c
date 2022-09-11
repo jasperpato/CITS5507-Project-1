@@ -14,23 +14,23 @@
 #include <errno.h>
 #include <time.h>
 
-#define N_MIN 1000
-#define N_MAX 1500
+#define N_MIN 100
+#define N_MAX 3000
 #define N_STEP 100
 
-#define P_MIN 0.4
-#define P_MAX 0.4
+#define P_MIN 0.0
+#define P_MAX 1.0
 #define P_STEP 0.1
 
 #define P_RES (int)1e3
 
-#define NT_MIN 3
-#define NT_MAX 3
+#define NT_MIN 1
+#define NT_MAX 4
 #define NT_STEP 1
 
 #define ARG_LENGTH 40
 
-#define RESULTS_FILE "results.csv"
+#define RESULTS_FILE "../test/results.csv"
 
 
 /**
@@ -54,6 +54,7 @@ int main(int argc, char *argv[]) {
         break;
       default:
         fprintf(stderr, "Usage: [-f RESULTS_FILENAME] [-l LOG_FILENAME]");
+        exit(EXIT_FAILURE);
     }
   }
 

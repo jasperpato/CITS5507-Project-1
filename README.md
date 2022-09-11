@@ -1,5 +1,11 @@
-# CITS5507 HPC PROJECT 1
+## CITS5507 HPC PROJECT 1
 
+## LATTICE PERCOLATION IN PARALLEL
+
+<br>
+Jasper Paterson 22736341  <br>
+Allen Antony 22706998  <br>
+<br>
 In this project we simulate percolation within a variable-length square lattice, and report the key details of the percolation: number of clusters, maximum cluster size, whether any cluster spans an entire row or column of the lattice, and time taken for the simulation.
 
 ### Usage
