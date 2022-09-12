@@ -9,7 +9,7 @@
 #include "../include/cluster.h"
 
 /** 
- * @return pointer to a new cluster starting from site (r, c)  
+ * @return Cluster* pointer to a new cluster starting from site (r, c)  
  */
 Cluster* cluster(int n, int n_threads, int r, int c) {
   Cluster *cl = (Cluster*)calloc(1, sizeof(Cluster));

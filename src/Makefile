@@ -25,3 +25,4 @@ percolate: $(OBJ)
 
 clean:
 	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ 
+	rm ./percolate
