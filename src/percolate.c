@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
   Bond* b = NULL;
   
   // options
-  short site = 1, verbose = 1, kaya = 0;
+  short site = 1, verbose = 1;
   char* fname = NULL, *rname = NULL;
   unsigned int seed = time(NULL); // default unique seed
 
@@ -260,12 +260,8 @@ int main(int argc, char *argv[])
   int n_threads = 1;
   
   int c;
-  while ((c = getopt(argc, argv, "vbksf:p:r:")) != -1) {
+  while ((c = getopt(argc, argv, "vbsf:p:r:")) != -1) {
     if(c == 'v') verbose = 0;   // silence printing
-    else if(c == 'k') {
-      kaya = 1;
-      verbose = 0;
-    }
     else if(c == 'b') site = 0; // bond
     else if(c == 'f') {         // scan lattice from file
       if(!optarg) {
@@ -389,13 +385,8 @@ int main(int argc, char *argv[])
     printf("Row percolation: %s\n", rperc ? "True" : "False");
     printf("Col percolation: %s\n\n", cperc ? "True" : "False");
   }
-  if(kaya) {
-    printf(
-      "%d,%f,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f\n",
-      n, p, n_threads, seed, num, max, rperc, cperc, init_time, perc_time, join_time, scan_time, total_time
-    );
-  }
-  else if(rname && !fname) { // write results to results file
+
+  if(rname && !fname) { // write results to results file
     FILE* f = fopen(rname, "a");
     if(!f) {
       printf("Error.\n");
