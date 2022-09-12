@@ -30,7 +30,7 @@
 
 #define ARG_LENGTH 40
 
-#define RESULTS_FILE "../test/results.csv"
+#define RESULTS_FILE "../test/results_4t.csv"
 
 
 /**
