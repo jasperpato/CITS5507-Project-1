@@ -19,7 +19,8 @@
 #include "../include/cluster.h"
 
 /**
- * @return int start index of the region of the lattice allocated to this thread. Allocates rows evenly to each thread.
+ * @return int start index of the region of the lattice allocated to this thread.
+ * Allocates n/n_threads rows to the first n_threads-n%n_threads threads and n/n_threads+1 rows to the remaining threads.
  */
 static int start_index(int n, int n_threads, int tid)
 {
@@ -27,7 +28,7 @@ static int start_index(int n, int n_threads, int tid)
 }
 
 /**
- * @return int end index of the region of the lattice allocated to this thread. Allocates rows evenly to each thread.
+ * @return int end index of the region of the lattice allocated to this thread.
  */
 static int end_index(int n, int n_threads, int tid)
 {
@@ -336,8 +337,6 @@ int main(int argc, char *argv[])
     exit(errno);
   }
 
-  // int est_num_clusters; // could be used with realloc instead of worse-case memory allocation
-  // int est_cluster_size;
   int max_clusters = n % 2 == 0 ? n*n/2 : (n-1)*(n-1)/2+1;
 
   int max_threads = omp_get_max_threads();
@@ -387,7 +386,7 @@ int main(int argc, char *argv[])
     printf("Col percolation: %s\n\n", cperc ? "True" : "False");
   }
 
-  if(rname && !fname) { // write results as integers to results file
+  if(rname && !fname) { // write results to results file
     FILE* f = fopen(rname, "a");
     if(!f) {
       printf("Error.\n");
